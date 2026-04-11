@@ -1,1 +1,1322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RBT Session Note Builder</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=Fira+Code:wght@400;500&family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#eef2f6;--surf:#fff;--s2:#f5f8fb;
+  --teal:#1a6b6b;--tm:#2a8a8a;--tl:#dff0f0;--tp:#f0fafa;
+  --amber:#b85c14;--al:#fef3e8;
+  --ink:#1c2533;--im:#4a5568;--il:#8a97a8;--bd:#d8e2ec;
+  --green:#286b44;--gl:#e6f4ec;
+  --red:#b83232;--rl:#fdf0f0;
+  --purple:#5e34a0;--pl:#f0eaff;
+  --blue:#1a4a8a;--bl:#e8f0fc;
+  --r:9px;--sh:0 2px 18px rgba(28,37,51,0.08);
+}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;padding-bottom:80px;font-size:14px;}
+header{background:var(--teal);color:#fff;padding:0 24px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:300;box-shadow:0 2px 12px rgba(0,0,0,0.15);}
+.logo{font-family:'Lora',serif;font-size:1.1rem;font-weight:600;}
+.hpills{display:flex;gap:8px;align-items:center;}
+.pill{background:rgba(255,255,255,0.13);border:1px solid rgba(255,255,255,0.22);border-radius:20px;padding:3px 10px;font-size:0.7rem;font-weight:700;cursor:pointer;transition:background 0.15s;}
+.pill:hover{background:rgba(255,255,255,0.22);}
+.pgw{background:rgba(0,0,0,0.18);height:3px;}
+.pgb{height:3px;background:#7fd8c8;transition:width 0.35s ease;width:0%;}
+.si{font-size:0.68rem;color:var(--green);font-weight:700;opacity:0;transition:opacity 0.3s;position:fixed;bottom:16px;right:16px;background:var(--gl);border:1px solid var(--green);border-radius:12px;padding:4px 10px;z-index:400;}
+.si.show{opacity:1;}
+.wrap{max-width:880px;margin:0 auto;padding:22px 16px;}
+.tabs{display:flex;gap:4px;margin-bottom:18px;flex-wrap:wrap;}
+.tab{padding:5px 11px;border-radius:16px;font-size:0.68rem;font-weight:700;cursor:pointer;border:2px solid var(--bd);background:var(--surf);color:var(--im);transition:all 0.15s;text-transform:uppercase;letter-spacing:0.03em;}
+.tab.active{background:var(--teal);color:#fff;border-color:var(--teal);}
+.tab.done{background:var(--gl);color:var(--green);border-color:var(--green);}
+.panel{display:none;animation:fi 0.2s ease;}.panel.active{display:block;}
+@keyframes fi{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:translateY(0);}}
+.card{background:var(--surf);border-radius:var(--r);border:1px solid var(--bd);padding:20px;margin-bottom:14px;box-shadow:var(--sh);}
+.ct{font-family:'Lora',serif;font-size:0.95rem;font-weight:600;color:var(--teal);margin-bottom:12px;display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
+.badge{font-size:0.62rem;font-weight:700;padding:2px 6px;border-radius:7px;text-transform:uppercase;letter-spacing:0.04em;font-family:'Nunito',sans-serif;}
+.br{background:var(--al);color:var(--amber);}.bh{background:var(--pl);color:var(--purple);}.bi{background:var(--tl);color:var(--teal);}.bo{background:#f0f4f8;color:var(--il);}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.fr.f{grid-template-columns:1fr;}.fr.t{grid-template-columns:1fr 1fr 1fr;}
+label{display:block;font-size:0.7rem;font-weight:700;color:var(--im);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.04em;}
+.ln{font-weight:400;text-transform:none;color:var(--il);font-size:0.68rem;}
+.req{color:var(--amber);}
+input[type=text],input[type=number],input[type=date],input[type=time],select,textarea{width:100%;padding:7px 10px;border:1.5px solid var(--bd);border-radius:6px;font-family:'Nunito',sans-serif;font-size:0.85rem;color:var(--ink);background:var(--s2);transition:border-color 0.15s;outline:none;}
+input:focus,select:focus,textarea:focus{border-color:var(--tm);background:#fff;}
+input[readonly]{background:#f0f4f8;cursor:default;color:var(--teal);font-weight:700;}
+textarea{resize:vertical;min-height:66px;line-height:1.5;}
+.tg{display:flex;gap:6px;flex-wrap:wrap;}
+.tb{padding:5px 12px;border-radius:6px;border:1.5px solid var(--bd);background:var(--s2);font-family:'Nunito',sans-serif;font-size:0.8rem;font-weight:600;cursor:pointer;transition:all 0.13s;color:var(--im);}
+.tb:hover{border-color:var(--tm);color:var(--teal);}.tb.sel{background:var(--tl);border-color:var(--teal);color:var(--teal);}
+.cw{display:flex;flex-wrap:wrap;gap:5px;}
+.ch{padding:5px 10px;border-radius:6px;border:1.5px solid var(--bd);background:var(--s2);font-size:0.78rem;font-weight:600;cursor:pointer;transition:all 0.13s;color:var(--im);display:inline-block;}
+.ch.sa{background:var(--al);border-color:var(--amber);color:var(--amber);}.ch.sg{background:var(--gl);border-color:var(--green);color:var(--green);}
+.dr{background:var(--s2);border:1.5px solid var(--bd);border-radius:7px;padding:12px;margin-bottom:9px;position:relative;}
+.drh{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;}
+.drt{font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:var(--teal);}
+.rb{background:none;border:none;color:var(--il);cursor:pointer;font-size:0.95rem;padding:0 3px;}.rb:hover{color:var(--red);}
+.ab{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border:1.5px dashed var(--tm);border-radius:6px;background:var(--tp);color:var(--teal);font-family:'Nunito',sans-serif;font-size:0.77rem;font-weight:700;cursor:pointer;transition:all 0.13s;margin-top:5px;}
+.ab:hover{background:var(--tl);}
+.nr{display:flex;justify-content:space-between;align-items:center;margin-top:16px;}
+.btn{padding:9px 20px;border-radius:7px;font-family:'Nunito',sans-serif;font-size:0.85rem;font-weight:700;cursor:pointer;border:none;transition:all 0.15s;}
+.bp{background:var(--teal);color:#fff;}.bp:hover{background:var(--tm);}
+.bs{background:var(--surf);color:var(--im);border:1.5px solid var(--bd);}.bs:hover{border-color:var(--teal);color:var(--teal);}
+.bgen{background:linear-gradient(135deg,var(--teal) 0%,#1a8a7a 100%);color:#fff;font-size:0.9rem;padding:11px 26px;box-shadow:0 4px 14px rgba(26,107,107,0.28);}
+.bgen:hover{transform:translateY(-1px);}
+.bdanger{background:var(--rl);color:var(--red);border:1.5px solid #e8b0b0;}.bdanger:hover{background:#fae0e0;}
+.tip{background:var(--al);border-left:4px solid var(--amber);border-radius:0 7px 7px 0;padding:10px 13px;font-size:0.78rem;color:#7a3c0a;margin-bottom:12px;line-height:1.5;}
+.info{background:var(--tp);border-left:4px solid var(--teal);border-radius:0 7px 7px 0;padding:9px 12px;font-size:0.77rem;color:var(--teal);margin-bottom:12px;line-height:1.5;}
+.sbox{background:var(--gl);border-left:4px solid var(--green);border-radius:0 7px 7px 0;padding:10px 13px;font-size:0.78rem;color:var(--green);margin-bottom:12px;line-height:1.5;}
+.wt{font-size:0.72rem;color:var(--amber);font-weight:600;margin-top:4px;}
+.hidden{display:none!important;}
+.div{border:none;border-top:1.5px dashed var(--bd);margin:14px 0;}
+.prev{background:#f8fffe;border:1.5px solid var(--teal);border-radius:7px;padding:11px 13px;font-family:'Fira Code',monospace;font-size:0.74rem;line-height:1.8;color:var(--ink);margin-top:10px;white-space:pre-wrap;word-break:break-word;}
+/* upload */
+.uz{border:2px dashed var(--bd);border-radius:8px;padding:18px;text-align:center;cursor:pointer;transition:all 0.15s;background:var(--s2);position:relative;overflow:hidden;}
+.uz:hover,.uz.dov{border-color:var(--teal);background:var(--tp);}
+.uz input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.uzi{font-size:1.8rem;display:block;margin-bottom:5px;}.uzt{font-weight:700;color:var(--teal);font-size:0.86rem;margin-bottom:2px;}.uzs{font-size:0.73rem;color:var(--il);}
+.tgrid{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px;}
+.tw{position:relative;display:inline-block;}
+.th{width:72px;height:72px;border-radius:6px;object-fit:cover;border:2px solid var(--bd);}
+.tr{position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;border:none;border-radius:50%;width:16px;height:16px;font-size:0.6rem;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;}
+.scanbtn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;background:var(--blue);color:#fff;border:none;border-radius:7px;font-family:'Nunito',sans-serif;font-size:0.85rem;font-weight:700;cursor:pointer;transition:all 0.15s;margin-top:10px;}
+.scanbtn:hover{background:#153d7a;}.scanbtn:disabled{background:var(--il);cursor:not-allowed;}
+.scst{font-size:0.77rem;margin-top:8px;min-height:20px;font-weight:600;line-height:1.5;}
+.scst.ld{color:var(--teal);}.scst.ok{color:var(--green);}.scst.er{color:var(--red);}
+.sel-pill{display:flex;align-items:center;gap:7px;border-radius:6px;padding:5px 9px;margin-bottom:8px;border:1.5px solid;}
+.sel-pill.on{background:var(--gl);border-color:var(--green);}.sel-pill.off{background:#f5f5f5;border-color:var(--bd);opacity:0.6;}
+.sel-pill label{text-transform:none;font-size:0.75rem;font-weight:700;cursor:pointer;letter-spacing:0;margin:0;}
+.sel-pill.on label{color:var(--green);}.sel-pill.off label{color:var(--il);}
+.ci{display:flex;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid var(--bd);font-size:0.8rem;}
+.ci:last-child{border-bottom:none;}
+.ck{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.68rem;font-weight:700;flex-shrink:0;}
+.ck.p{background:var(--gl);color:var(--green);}.ck.f{background:var(--rl);color:var(--red);}
+.cgo{font-size:0.7rem;color:var(--teal);cursor:pointer;font-weight:700;text-decoration:underline;white-space:nowrap;}
+.pbw{background:var(--bl);border:1px solid #c0d0f0;border-radius:var(--r);padding:14px;margin-bottom:14px;}
+.pbt{font-family:'Lora',serif;font-size:0.9rem;font-weight:600;color:var(--blue);margin-bottom:9px;}
+.pbl{display:flex;flex-direction:column;gap:5px;max-height:180px;overflow-y:auto;}
+.pi{display:flex;align-items:center;gap:7px;background:#fff;border:1px solid #c0d0f0;border-radius:6px;padding:7px 9px;}
+.pt{flex:1;font-size:0.75rem;color:var(--ink);font-family:'Fira Code',monospace;}
+.pub{background:var(--blue);color:#fff;border:none;border-radius:4px;padding:3px 8px;font-size:0.68rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;}
+.pdb{background:none;border:none;color:var(--il);cursor:pointer;font-size:0.85rem;}.pdb:hover{color:var(--red);}
+.par{display:flex;gap:7px;margin-top:8px;}.par input{flex:1;}
+.par button{padding:7px 12px;background:var(--blue);color:#fff;border:none;border-radius:6px;font-family:'Nunito',sans-serif;font-size:0.77rem;font-weight:700;cursor:pointer;}
+.nb{background:var(--surf);border:1px solid var(--bd);border-radius:var(--r);margin-bottom:12px;overflow:hidden;box-shadow:var(--sh);}
+.nbh{padding:10px 15px;font-family:'Lora',serif;font-size:0.88rem;font-weight:600;display:flex;justify-content:space-between;align-items:center;color:#fff;}
+.h1{background:var(--teal);}.h2{background:#286b44;}.h3{background:#1a4a8a;}.h4{background:#5e34a0;}
+.cbtn{background:rgba(255,255,255,0.18);border:none;color:#fff;padding:3px 10px;border-radius:4px;font-family:'Nunito',sans-serif;font-size:0.72rem;cursor:pointer;font-weight:700;}
+.cbtn:hover{background:rgba(255,255,255,0.32);}
+.nt{padding:14px;font-family:'Fira Code',monospace;font-size:0.77rem;line-height:1.85;white-space:pre-wrap;word-break:break-word;color:var(--ink);}
+.spb{font-size:0.68rem;color:var(--blue);cursor:pointer;font-weight:700;padding:3px 8px;background:var(--bl);border:none;border-radius:4px;font-family:'Nunito',sans-serif;}
+.cab{width:100%;padding:12px;background:var(--teal);color:#fff;border:none;border-radius:var(--r);font-family:'Nunito',sans-serif;font-size:0.9rem;font-weight:700;cursor:pointer;margin-bottom:12px;transition:all 0.15s;}
+.cab:hover{background:var(--tm);}
+/* Profile drawer */
+.drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:500;display:none;}
+.drawer-overlay.open{display:block;}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:340px;max-width:92vw;background:#1e293b;z-index:501;overflow-y:auto;display:flex;flex-direction:column;transform:translateX(100%);transition:transform 0.25s ease;}
+.drawer.open{transform:translateX(0);}
+.drawer-head{padding:20px 18px 16px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;justify-content:space-between;align-items:center;}
+.drawer-title{font-size:16px;font-weight:800;color:#f1f5f9;}
+.drawer-sub{font-size:12px;color:#94a3b8;margin-top:2px;}
+.drawer-close{background:rgba(255,255,255,0.08);border:none;color:#f1f5f9;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;font-family:'Nunito',sans-serif;}
+.drawer-body{padding:16px 18px;flex:1;}
+.dk-inp{width:100%;padding:10px 12px;border-radius:10px;border:1.5px solid rgba(255,255,255,0.12);font-size:15px;color:#f1f5f9;background:rgba(255,255,255,0.06);box-sizing:border-box;outline:none;font-family:'Nunito',sans-serif;}
+.dk-inp::placeholder{color:#94a3b8;}
+.dk-lbl{font-size:12px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;display:block;}
+.dk-btn{padding:10px 18px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-family:'Nunito',sans-serif;border:none;}
+.dk-btn-pr{background:#2563eb;color:#fff;}
+.dk-btn-gh{background:transparent;color:#94a3b8;border:1px solid rgba(255,255,255,0.12)!important;border:none;}
+.dk-btn-ok{background:#f0fdf4;color:#16a34a;}
+.profile-card{background:rgba(255,255,255,0.06);border-radius:12px;padding:14px;margin-bottom:10px;}
+.profile-fila{font-size:22px;font-weight:800;color:#f1f5f9;letter-spacing:2px;}
+.profile-meta{font-size:12px;color:#94a3b8;margin-top:2px;}
+.fila-display{background:rgba(37,99,235,0.25);border-radius:10px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.fila-code{font-size:24px;font-weight:800;color:#93c5fd;letter-spacing:3px;}
+.fila-note{font-size:12px;color:#94a3b8;}
+.prog-chip{display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,0.08);border-radius:20px;padding:4px 10px;margin:2px;}
+.prog-chip span{font-size:12px;color:#f1f5f9;}
+.prog-chip button{background:none;border:none;color:#fca5a5;cursor:pointer;font-size:11px;padding:0;font-family:'Nunito',sans-serif;}
+.bx-chip{display:inline-flex;align-items:center;gap:4px;background:rgba(220,38,38,0.2);border-radius:20px;padding:4px 10px;margin:2px;}
+.bx-chip span{font-size:12px;color:#fca5a5;}
+.bx-chip button{background:none;border:none;color:#fca5a5;cursor:pointer;font-size:11px;padding:0;font-family:'Nunito',sans-serif;}
+.loaded-banner{background:var(--gl);border:1px solid #bbf7d0;border-radius:12px;padding:12px 14px;margin-bottom:16px;display:flex;align-items:center;gap:8px;font-size:13px;}
+.rb2{background:linear-gradient(135deg,#1a4a8a,#2a6abf);color:#fff;border-radius:var(--r);padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.rb2t{font-weight:700;font-size:0.88rem;}.rb2s{font-size:0.75rem;opacity:0.85;margin-top:2px;}
+.rb2b{background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.35);color:#fff;border-radius:6px;padding:5px 12px;font-family:'Nunito',sans-serif;font-size:0.78rem;font-weight:700;cursor:pointer;white-space:nowrap;}
+.rb2b:hover{background:rgba(255,255,255,0.28);}
+/* API key setup */
+.apibox{background:var(--bl);border:1.5px solid #c0d0f0;border-radius:var(--r);padding:16px;margin-bottom:14px;}
+.apibox-title{font-family:'Lora',serif;font-size:0.9rem;font-weight:600;color:var(--blue);margin-bottom:6px;}
+.apibox-note{font-size:0.75rem;color:var(--im);margin-bottom:10px;line-height:1.5;}
+@media(max-width:580px){.fr,.fr.t{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Session Note Builder</div>
+  <div class="hpills">
+    <div class="pill" onclick="openDrawer()">Profiles</div>
+    <div class="pill" id="clientPill">No client loaded</div>
+  </div>
+</header>
+<div class="pgw"><div class="pgb" id="pgb"></div></div>
+<div class="si" id="saveInd">✓ Saved</div>
 
+<div class="wrap">
+  <div id="resumeBanner"></div>
+  <div id="loadedBanner"></div>
+
+  <div class="tabs" id="tabs">
+    <div class="tab active" onclick="goStep(0)">1. Setup</div>
+    <div class="tab" onclick="goStep(1)">2. Session</div>
+    <div class="tab" onclick="goStep(2)">3. Transition</div>
+    <div class="tab" onclick="goStep(3)">4. Barriers</div>
+    <div class="tab" onclick="goStep(4)">5. Programs</div>
+    <div class="tab" onclick="goStep(5)">6. Data</div>
+    <div class="tab" onclick="goStep(6)">7. Response</div>
+    <div class="tab" onclick="goStep(7)">8. Review</div>
+    <div class="tab" onclick="goStep(8)">9. Notes</div>
+  </div>
+
+  <!-- STEP 0: SETUP / API KEY -->
+  <div class="panel active" id="s0">
+    <div class="apibox">
+      <div class="apibox-title">Claude API Key</div>
+      <div class="apibox-note">Your API key is stored only in this browser. It never leaves your device except to call Claude directly. Never share this key with anyone.</div>
+      <div class="fr f">
+        <div>
+          <label>API Key <span class="req">*</span></label>
+          <input type="password" id="apiKey" placeholder="sk-ant-..." oninput="saveApiKey()">
+        </div>
+      </div>
+      <div id="apiStatus" style="font-size:0.75rem;margin-top:6px;"></div>
+    </div>
+    <div class="card">
+      <div class="ct">Upload Session Screenshots <span class="badge br">Required for AI scan</span></div>
+      <div class="info"><strong>Upload both sessions.</strong> AI reads them together, extracts programs and behaviors, and auto-fills the Data section. Priority: increases → maintains → decreases.</div>
+      <div style="margin-bottom:14px;">
+        <label>Previous Session Data <span class="ln">(for comparison)</span></label>
+        <div class="uz" id="prevZ" ondragover="doDrag(event,true,'prevZ')" ondragleave="doDrag(event,false,'prevZ')" ondrop="doDrop(event,'prev')">
+          <input type="file" accept="image/*" multiple onchange="doFiles(event,'prev')">
+          <span class="uzi">📋</span>
+          <div class="uzt">Upload previous session screenshots</div>
+          <div class="uzs">Click or drag — multiple images accepted</div>
+        </div>
+        <div class="tgrid" id="prevTh"></div>
+      </div>
+      <div style="margin-bottom:14px;">
+        <label>Current Session Data <span class="req">*</span></label>
+        <div class="uz" id="currZ" ondragover="doDrag(event,true,'currZ')" ondragleave="doDrag(event,false,'currZ')" ondrop="doDrop(event,'curr')">
+          <input type="file" accept="image/*" multiple onchange="doFiles(event,'curr')">
+          <span class="uzi">📊</span>
+          <div class="uzt">Upload current session screenshots</div>
+          <div class="uzs">Click or drag — multiple images accepted</div>
+        </div>
+        <div class="tgrid" id="currTh"></div>
+      </div>
+      <button class="scanbtn" id="scanBtn" onclick="doScan()" disabled>Scan Images with AI</button>
+      <div class="scst" id="scanSt"></div>
+    </div>
+    <div class="nr"><div></div><button class="btn bp" onclick="goStep(1)">Next: Session Info →</button></div>
+  </div>
+
+  <!-- STEP 1: SESSION -->
+  <div class="panel" id="s1">
+    <div class="card">
+      <div class="ct">Session Details <span class="badge br">Required</span></div>
+      <div class="fr t">
+        <div>
+          <label>Day <span class="req">*</span></label>
+          <select id="dow" onchange="autoSave()">
+            <option value="">Select...</option>
+            <option>Monday</option><option>Tuesday</option><option>Wednesday</option>
+            <option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option>
+          </select>
+        </div>
+        <div><label>Date <span class="req">*</span></label><input type="date" id="sDate" onchange="autoSave()"></div>
+        <div>
+          <label>Location <span class="req">*</span></label>
+          <select id="loc" onchange="autoSave()">
+            <option value="the clinic">Clinic</option>
+            <option value="the home">Home</option>
+            <option value="the community">Community</option>
+          </select>
+        </div>
+      </div>
+      <div class="fr t">
+        <div><label>Start Time <span class="req">*</span></label><input type="time" id="sT" oninput="calcH();autoSave()"></div>
+        <div><label>End Time <span class="req">*</span></label><input type="time" id="eT" oninput="calcH();autoSave()"></div>
+        <div><label>Total Hours (auto)</label><input type="text" id="tH" readonly></div>
+      </div>
+      <div class="fr">
+        <div><label>Programs Completed <span class="req">*</span></label><input type="number" id="pC" min="0" max="99" placeholder="7" oninput="calcInc();autoSave()"></div>
+        <div><label>Total Programs <span class="req">*</span></label><input type="number" id="pT" min="0" max="99" placeholder="8" oninput="calcInc();autoSave()"></div>
+      </div>
+      <div id="incW" class="hidden">
+        <label style="display:block;margin-bottom:5px;">Programs not completed — add one entry per reason <span class="req">*</span></label>
+        <div class="info">Each entry generates: <em>"X/Y programs were not worked on due to [reason]."</em></div>
+        <div id="incL"></div>
+        <button class="ab" onclick="addInc()">+ Add reason</button>
+      </div>
+    </div>
+    <div class="nr"><button class="btn bs" onclick="goStep(0)">← Back</button><button class="btn bp" onclick="goStep(2)">Next: Transition →</button></div>
+  </div>
+
+  <!-- STEP 2: TRANSITION -->
+  <div class="panel" id="s2">
+    <div class="card">
+      <div class="ct">Client Transition &amp; Safety <span class="badge br">Required</span></div>
+      <label style="margin-bottom:7px;display:block;">Client transitioned into the session... <span class="req">*</span></label>
+      <div class="tg" id="transG" style="margin-bottom:12px;">
+        <button class="tb" onclick="selT(this,'transG');autoSave()">independently</button>
+        <button class="tb" onclick="selT(this,'transG');autoSave()">with prompting</button>
+        <button class="tb" onclick="selT(this,'transG');autoSave()">with behaviors</button>
+      </div>
+      <div class="fr">
+        <div>
+          <label>Appeared <span class="req">*</span> <span class="ln">(e.g., happy, calm, agitated)</span></label>
+          <input type="text" id="transApp" placeholder="e.g., happy" oninput="autoSave()">
+        </div>
+        <div>
+          <label>Evidenced by <span class="req">*</span> <span class="ln">(observable — not parent reported)</span></label>
+          <input type="text" id="transEvid" placeholder="e.g., his greeting and smile upon entry" oninput="autoSave()">
+        </div>
+      </div>
+      <div class="div"></div>
+      <label style="margin-bottom:7px;display:block;">Medical or safety concerns? <span class="req">*</span></label>
+      <div class="tg" id="safeG" style="margin-bottom:10px;">
+        <button class="tb" onclick="selT(this,'safeG');showEl('safeD',false);autoSave()">Were no concerns</button>
+        <button class="tb" onclick="selT(this,'safeG');showEl('safeD',true);autoSave()">Were concerns — list below</button>
+      </div>
+      <div id="safeD" class="hidden">
+        <label>Describe concerns <span class="ln">(e.g., 2 aggression and 1 eloping)</span></label>
+        <input type="text" id="safeT" placeholder="e.g., 2 aggression and 1 eloping" style="margin-top:4px;" oninput="autoSave()">
+      </div>
+    </div>
+    <div class="nr"><button class="btn bs" onclick="goStep(1)">← Back</button><button class="btn bp" onclick="goStep(3)">Next: Barriers →</button></div>
+  </div>
+
+  <!-- STEP 3: BARRIERS -->
+  <div class="panel" id="s3">
+    <div class="card">
+      <div class="ct">Barriers to Treatment <span class="badge br">Required</span></div>
+      <div class="tip"><strong>Rule:</strong> The barrier section may only be left blank if no barrier occurred. If barriers occurred, you must list what was included AND what technician did to mitigate.</div>
+      <label style="margin-bottom:7px;display:block;">Were there barriers? <span class="req">*</span></label>
+      <div class="tg" id="barYN" style="margin-bottom:12px;">
+        <button class="tb" onclick="selT(this,'barYN');showEl('barD',false);autoSave()">No barriers</button>
+        <button class="tb" onclick="selT(this,'barYN');showEl('barD',true);autoSave()">Yes — barriers occurred</button>
+      </div>
+      <div id="barD" class="hidden">
+        <label style="margin-bottom:6px;display:block;">Barriers included <span class="req">*</span></label>
+        <div class="cw" id="barChips" style="margin-bottom:10px;">
+          <span class="ch" onclick="togC(this,'sa');autoSave()">Instructional Control</span>
+          <span class="ch" onclick="togC(this,'sa');autoSave()">Weak Motivating Operations</span>
+          <span class="ch" onclick="togC(this,'sa');autoSave()">Negative Behaviors (Not Presently Targeted)</span>
+          <span class="ch" onclick="togC(this,'sa');autoSave()">Self-Stimulatory Behaviors</span>
+          <span class="ch" onclick="togC(this,'sa');autoSave()">Scrolling Responses</span>
+          <span class="ch" onclick="togC(this,'sa');autoSave()">Reinforcement Dependent</span>
+          <span class="ch" onclick="togC(this,'sa');showEl('barOW',this.classList.contains('sa'));autoSave()">Other (describe below)</span>
+        </div>
+        <div id="barOW" class="hidden" style="margin-bottom:10px;">
+          <label>Describe barrier</label>
+          <input type="text" id="barOT" placeholder="e.g., excessive aggression" style="margin-top:4px;" oninput="autoSave()">
+        </div>
+        <div class="div"></div>
+        <label style="margin-bottom:6px;display:block;">To mitigate, technician <span class="req">*</span></label>
+        <div class="cw" id="mitChips" style="margin-bottom:8px;">
+          <span class="ch" onclick="togC(this,'sg');autoSave()">offered multiple reinforcers</span>
+          <span class="ch" onclick="togC(this,'sg');autoSave()">conducted a preference assessment</span>
+          <span class="ch" onclick="togC(this,'sg');autoSave()">changed location</span>
+          <span class="ch" onclick="togC(this,'sg');autoSave()">offered comfort items</span>
+          <span class="ch" onclick="togC(this,'sg');autoSave()">used a timer</span>
+          <span class="ch" onclick="togC(this,'sg');autoSave()">used a first/then board</span>
+          <span class="ch" onclick="togC(this,'sg');autoSave()">used a token board</span>
+          <span class="ch" onclick="togC(this,'sg');autoSave()">redirected client</span>
+          <span class="ch" onclick="togC(this,'sg');autoSave()">prompted client to focus</span>
+          <span class="ch" onclick="togC(this,'sg');autoSave()">provided frequent breaks</span>
+          <span class="ch" onclick="togC(this,'sg');autoSave()">allowed quiet time</span>
+          <span class="ch" onclick="togC(this,'sg');autoSave()">used behavioral momentum</span>
+          <span class="ch" onclick="togC(this,'sg');showEl('mitOW',this.classList.contains('sg'));autoSave()">other</span>
+        </div>
+        <div id="mitOW" class="hidden">
+          <label>Describe mitigation</label>
+          <input type="text" id="mitOT" placeholder="e.g., used visual schedule" style="margin-top:4px;" oninput="autoSave()">
+        </div>
+      </div>
+    </div>
+    <div class="nr"><button class="btn bs" onclick="goStep(2)">← Back</button><button class="btn bp" onclick="goStep(4)">Next: Programs →</button></div>
+  </div>
+
+  <!-- STEP 4: PROGRAMS / CONTENT -->
+  <div class="panel" id="s4">
+    <div class="card">
+      <div class="ct">Content Areas Targeted <span class="badge br">Pick exactly 3</span></div>
+      <div class="tg" id="contG" style="margin-bottom:6px;">
+        <button class="tb" onclick="togCont(this)">communication and language</button>
+        <button class="tb" onclick="togCont(this)">social skills</button>
+        <button class="tb" onclick="togCont(this)">adaptive behavior</button>
+        <button class="tb" onclick="togCont(this)">academic readiness</button>
+        <button class="tb" onclick="togCont(this)">play skills</button>
+        <button class="tb" onclick="togCont(this)">self-regulation</button>
+        <button class="tb" onclick="togCont(this)">daily living skills</button>
+        <button class="tb" onclick="togCont(this)">vocational skills</button>
+        <button class="tb" onclick="togCont(this)">behavior reduction</button>
+        <button class="tb" onclick="togCont(this)">motor skills</button>
+        <button class="tb" onclick="togCont(this)">imitation</button>
+        <button class="tb" onclick="togCont(this)">attending skills</button>
+        <button class="tb" onclick="togCont(this)">requesting and manding</button>
+        <button class="tb" onclick="togCont(this)">receptive language</button>
+        <button class="tb" onclick="togCont(this)">expressive language</button>
+      </div>
+      <div id="contW" class="wt hidden">Maximum 3 content areas. Deselect one to change.</div>
+      <div style="margin-top:8px;display:flex;gap:8px;align-items:center;">
+        <input type="text" id="contCust" placeholder="Custom area (optional)" style="flex:1;" oninput="autoSave()">
+        <div id="contCount" style="font-size:0.75rem;font-weight:700;color:var(--teal);white-space:nowrap;">0 / 3 selected</div>
+      </div>
+    </div>
+    <div class="nr"><button class="btn bs" onclick="goStep(3)">← Back</button><button class="btn bp" onclick="goStep(5)">Next: Data →</button></div>
+  </div>
+
+  <!-- STEP 5: DATA -->
+  <div class="panel" id="s5">
+    <div id="scanBanner" class="hidden sbox" style="margin-bottom:14px;"></div>
+    <div class="card">
+      <div class="ct">Degree of Progress — Skill Data <span class="badge br">1 per hour of session</span></div>
+      <div class="tip"><strong>Rules:</strong> One sentence per session hour. Focus on increases. Do not use a skill maintained at 0%. Auto-selection priority: increases → maintains → decreases.</div>
+      <div id="skillL"></div>
+      <button class="ab" onclick="addSkillRow()">+ Add program manually</button>
+    </div>
+    <div class="card">
+      <div class="ct">Behaviors for Decrease <span class="badge br">Required</span></div>
+      <div class="tg" id="behTrackG" style="margin-bottom:10px;">
+        <button class="tb sel" onclick="selT(this,'behTrackG');showEl('behContent',true);autoSave()">Tracking behaviors</button>
+        <button class="tb" onclick="selT(this,'behTrackG');showEl('behContent',false);autoSave()">Not tracking this session</button>
+      </div>
+      <div id="behContent">
+        <div id="behL"></div>
+        <button class="ab" onclick="addBehRow()">+ Add behavior</button>
+      </div>
+      <div class="div"></div>
+      <label style="margin-bottom:7px;display:block;">Session productivity <span class="req">*</span></label>
+      <div class="tg" id="prodG" style="margin-bottom:10px;">
+        <button class="tb" onclick="selT(this,'prodG');autoSave()">productive</button>
+        <button class="tb" onclick="selT(this,'prodG');autoSave()">less productive than anticipated</button>
+      </div>
+      <label style="margin-bottom:7px;display:block;">Response to treatment <span class="req">*</span></label>
+      <div class="tg" id="respG">
+        <button class="tb" onclick="selT(this,'respG');autoSave()">significant</button>
+        <button class="tb" onclick="selT(this,'respG');autoSave()">positive</button>
+        <button class="tb" onclick="selT(this,'respG');autoSave()">limited</button>
+      </div>
+    </div>
+    <div class="nr"><button class="btn bs" onclick="goStep(4)">← Back</button><button class="btn bp" onclick="goStep(6)">Next: Response →</button></div>
+  </div>
+
+  <!-- STEP 6: CLIENT RESPONSE -->
+  <div class="panel" id="s6">
+    <div class="card">
+      <div class="ct">Client Specific Response to Treatment <span class="badge br">Min. 2 examples</span></div>
+      <div class="tip">Must give at least TWO specific examples describing how the client responded to ABA interventions. Must be specific to this client and unique to this session.</div>
+      <div id="exampleL"></div>
+      <button class="ab" onclick="addExample()">+ Add example</button>
+    </div>
+    <div class="nr"><button class="btn bs" onclick="goStep(5)">← Back</button><button class="btn bp" onclick="goStep(7)">Next: Review →</button></div>
+  </div>
+
+  <!-- STEP 7: REVIEW / CHECKLIST -->
+  <div class="panel" id="s7">
+    <div class="card">
+      <div class="ct">Pre-Generation Checklist</div>
+      <div class="info">All items must pass. Click "Fix it" to jump to any section.</div>
+      <div id="clItems"></div>
+    </div>
+    <div class="pbw">
+      <div class="pbt">Phrase Bank</div>
+      <div class="info" style="margin-bottom:9px;">Save frequently used sentences. Persists between sessions.</div>
+      <div class="pbl" id="phraseL"></div>
+      <div class="par">
+        <input type="text" id="newP" placeholder="Type a phrase to save...">
+        <button onclick="savePhrase()">Save</button>
+      </div>
+    </div>
+    <div class="nr"><button class="btn bs" onclick="goStep(6)">← Back</button><button class="btn bgen" onclick="runCheck()">Generate Notes</button></div>
+  </div>
+
+  <!-- STEP 8: OUTPUT -->
+  <div class="panel" id="s8">
+    <div class="info"><strong>De-identification applied.</strong> Client name replaced with FiLa code. Dates accurate as required.</div>
+    <button class="cab" onclick="copyAll()">Copy All Notes to Clipboard</button>
+    <div id="outSec"></div>
+    <div style="margin-top:22px;background:var(--rl);border:1.5px solid #e8b0b0;border-radius:var(--r);padding:16px;">
+      <div style="font-family:'Lora',serif;font-weight:600;color:var(--red);margin-bottom:6px;font-size:0.95rem;">Start a New Note</div>
+      <div style="font-size:0.78rem;color:var(--im);margin-bottom:12px;line-height:1.5;">Clears all session data. Profile, phrase bank, and API key are kept.</div>
+      <button class="btn bdanger" onclick="confirmClear()">Clear Session &amp; Start Fresh</button>
+    </div>
+  </div>
+</div>
+
+<!-- PROFILE DRAWER -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-head">
+    <div>
+      <div class="drawer-title">Client Profiles</div>
+      <div class="drawer-sub">Stored locally on this device</div>
+    </div>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="drawer-body" id="drawerBody"></div>
+</div>
+
+<script>
+// ── STATE ─────────────────────────────────────────────────
+let step=0, prevImgs=[], currImgs=[], phrases=[], saveTimer=null;
+let activeClient=null; // {fila, programs:[{name,id}], bxList:[]}
+const SK='snb_v8_session';
+const PK='snb_v8_profiles';
+const PHRASE_K='snb_v8_phrases';
+
+const STARTERS=[
+  "Client required multiple prompts to initiate the task; technician ",
+  "Client demonstrated appropriate communication by verbally stating ",
+  "Client engaged in self-stimulatory behaviors; technician ",
+  "Client successfully used their replacement behavior by ",
+  "Client demonstrated increased tolerance for non-preferred tasks by ",
+  "Client responded positively to preferred reinforcers and completed ",
+  "Client required a break after demonstrating signs of fatigue; technician ",
+  "Client initiated social interaction with technician by "
+];
+
+// ── INIT ──────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded',()=>{
+  loadPhrases();
+  document.getElementById('sDate').valueAsDate=new Date();
+  loadApiKeyUI();
+  const saved=tryLoadSession();
+  if(!saved){addSkillRow();addBehRow();addExample();addExample();}
+  renderPhrases();
+  renderDrawer();
+});
+
+// ── API KEY ───────────────────────────────────────────────
+function saveApiKey(){
+  const k=document.getElementById('apiKey').value.trim();
+  try{localStorage.setItem('snb_v8_apikey',k);}catch(e){}
+  updApiStatus(k);
+  updScanBtn();
+}
+function loadApiKeyUI(){
+  try{
+    const k=localStorage.getItem('snb_v8_apikey')||'';
+    document.getElementById('apiKey').value=k;
+    updApiStatus(k);
+  }catch(e){}
+}
+function updApiStatus(k){
+  const el=document.getElementById('apiStatus');
+  if(k&&k.startsWith('sk-ant-')){
+    el.style.color='var(--green)';el.textContent='✓ API key saved in this browser';
+  } else if(k){
+    el.style.color='var(--amber)';el.textContent='Key format looks unexpected — should start with sk-ant-';
+  } else {
+    el.style.color='var(--il)';el.textContent='Enter your Claude API key to enable AI scanning';
+  }
+}
+function getApiKey(){
+  try{return localStorage.getItem('snb_v8_apikey')||'';}catch(e){return '';}
+}
+
+// ── PROFILES ──────────────────────────────────────────────
+function loadProfiles(){try{return JSON.parse(localStorage.getItem(PK)||'{}');}catch(e){return {};}}
+function saveProfiles(p){try{localStorage.setItem(PK,JSON.stringify(p));}catch(e){}}
+function mkId(){return Math.random().toString(36).slice(2);}
+function toFiLa(name){
+  const p=name.trim().split(/\s+/).filter(Boolean);
+  if(!p.length)return'';
+  const f=(p[0]||'').slice(0,2).toUpperCase();
+  const l=(p.length>1?p[p.length-1]:p[0]).slice(0,2).toUpperCase();
+  return p.length>1?f+l:f;
+}
+
+let drawerView='list'; // 'list' | 'create'
+let drawerEditing=null;
+let drawerForm={fila:'',rawName:'',total:'',programs:[],bxList:[]};
+let drawerNewBx='';
+let drawerScanStatus='idle';
+let drawerScanErr='';
+
+function openDrawer(){
+  drawerView='list';drawerEditing=null;
+  document.getElementById('drawerOverlay').classList.add('open');
+  document.getElementById('drawer').classList.add('open');
+  renderDrawer();
+}
+function closeDrawer(){
+  document.getElementById('drawerOverlay').classList.remove('open');
+  document.getElementById('drawer').classList.remove('open');
+}
+
+function renderDrawer(){
+  const body=document.getElementById('drawerBody');
+  if(drawerView==='list') renderDrawerList(body);
+  else renderDrawerCreate(body);
+}
+
+function renderDrawerList(body){
+  const profiles=loadProfiles();
+  const keys=Object.keys(profiles);
+  let html=`<button onclick="startDrawerCreate()" style="width:100%;padding:10px;background:#2563eb;color:#fff;border:none;border-radius:10px;font-family:'Nunito',sans-serif;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:16px;">+ New Profile</button>`;
+  if(!keys.length){html+=`<div style="text-align:center;color:#94a3b8;font-size:14px;padding:32px 0;">No profiles yet.</div>`;}
+  keys.forEach(k=>{
+    const pr=profiles[k];
+    html+=`<div class="profile-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div>
+          <div class="profile-fila">${k}</div>
+          <div class="profile-meta">${pr.programs?pr.programs.length:0} programs | ${pr.bxList?pr.bxList.length:0} BX</div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button onclick="startDrawerEdit('${k}')" style="background:rgba(255,255,255,0.1);border:none;color:#f1f5f9;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:12px;font-family:'Nunito',sans-serif;">Edit</button>
+          <button onclick="deleteProfile('${k}')" style="background:rgba(220,38,38,0.2);border:none;color:#fca5a5;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:12px;font-family:'Nunito',sans-serif;">Del</button>
+        </div>
+      </div>
+      <button onclick="loadProfile('${k}')" style="width:100%;padding:9px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">Load for this session</button>
+    </div>`;
+  });
+  body.innerHTML=html;
+}
+
+function startDrawerCreate(){
+  drawerView='create';drawerEditing=null;
+  drawerForm={fila:'',rawName:'',total:'',programs:[],bxList:[]};
+  drawerNewBx='';drawerScanStatus='idle';drawerScanErr='';
+  renderDrawer();
+}
+function startDrawerEdit(k){
+  drawerView='create';drawerEditing=k;
+  const profiles=loadProfiles();
+  const pr=profiles[k]||{};
+  drawerForm={fila:k,rawName:'',total:pr.total||'',programs:pr.programs?[...pr.programs]:[],bxList:pr.bxList?[...pr.bxList]:[]};
+  drawerNewBx='';drawerScanStatus='idle';drawerScanErr='';
+  renderDrawer();
+}
+function deleteProfile(k){
+  if(!confirm('Delete profile '+k+'?'))return;
+  const profiles=loadProfiles();delete profiles[k];saveProfiles(profiles);
+  if(activeClient&&activeClient.fila===k){activeClient=null;updClientPill();}
+  renderDrawer();
+}
+function loadProfile(k){
+  const profiles=loadProfiles();
+  const pr=profiles[k];
+  if(!pr)return;
+  activeClient={fila:k,programs:pr.programs||[],bxList:pr.bxList||[]};
+  if(pr.total)document.getElementById('pT').value=pr.total;
+  updClientPill();
+  // pre-populate bx rows from profile if behL is empty
+  const behL=document.getElementById('behL');
+  if(behL.children.length===0&&activeClient.bxList.length>0){
+    activeClient.bxList.forEach((bx,i)=>addBehRow({name:bx,_sel:i===0}));
+  }
+  closeDrawer();
+  showLoadedBanner(k,pr.programs?pr.programs.length:0);
+}
+function updClientPill(){
+  document.getElementById('clientPill').textContent=activeClient?'Client: '+activeClient.fila:'No client loaded';
+}
+function showLoadedBanner(fila,count){
+  document.getElementById('loadedBanner').innerHTML=`<div class="loaded-banner"><span style="color:var(--green);font-weight:700;">✓ Profile loaded: ${fila}</span><span style="color:var(--im);font-size:12px;">${count} programs</span></div>`;
+}
+
+function renderDrawerCreate(body){
+  const progs=drawerForm.programs;
+  const bxList=drawerForm.bxList;
+  const hasFila=!!drawerForm.fila;
+  let progChips=progs.map((p,i)=>`<span class="prog-chip"><span>${p.name}</span><button onclick="removeDrawerProg(${i})">x</button></span>`).join('');
+  let bxChips=bxList.map((bx,i)=>`<span class="bx-chip"><span>${bx}</span><button onclick="removeDrawerBx(${i})">x</button></span>`).join('');
+  let scanMsg='';
+  if(drawerScanStatus==='running') scanMsg=`<div style="color:#93c5fd;font-size:13px;margin-top:6px;">Extracting program names...</div>`;
+  if(drawerScanStatus==='done') scanMsg=`<div style="color:#86efac;font-size:13px;margin-top:6px;">✓ Programs extracted</div>`;
+  if(drawerScanErr) scanMsg=`<div style="color:#fca5a5;font-size:13px;margin-top:6px;">${drawerScanErr}</div>`;
+
+  body.innerHTML=`
+    <button onclick="drawerView='list';renderDrawer()" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:13px;margin-bottom:14px;font-family:'Nunito',sans-serif;">← Back</button>
+    <div style="margin-bottom:14px;">
+      <label class="dk-lbl">Client Full Name</label>
+      <input class="dk-inp" placeholder="First Last" id="drawerNameInp" value="${drawerForm.rawName||''}" oninput="drawerNameChange(this.value)">
+      <p style="font-size:12px;color:#94a3b8;margin-top:4px;">Name is never saved — only the FiLa code is stored.</p>
+    </div>
+    ${hasFila?`<div class="fila-display"><span class="fila-code">${drawerForm.fila}</span><span class="fila-note">FiLa code — real name discarded</span></div>`:''}
+    <div style="margin-bottom:14px;">
+      <label class="dk-lbl">Total Programs</label>
+      <input class="dk-inp" type="number" min="0" placeholder="e.g. 8" id="drawerTotalInp" value="${drawerForm.total||''}" oninput="drawerForm.total=this.value">
+    </div>
+    <div style="margin-bottom:14px;">
+      <label class="dk-lbl">Upload Program Screenshots</label>
+      <div style="position:relative;border:2px dashed rgba(255,255,255,0.2);border-radius:12px;padding:14px 12px;text-align:center;background:rgba(255,255,255,0.04);cursor:pointer;overflow:hidden;">
+        <div style="color:#94a3b8;font-size:14px;pointer-events:none;">${progs.length>0?progs.length+' programs loaded — click to add more':'Click to upload program list screenshots'}</div>
+        <input type="file" accept="image/*" multiple style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;" onchange="drawerScanFiles(event)">
+      </div>
+      ${scanMsg}
+    </div>
+    ${progs.length>0?`<div style="margin-bottom:14px;"><label class="dk-lbl">Programs (${progs.length})</label><div style="display:flex;flex-wrap:wrap;gap:4px;">${progChips}</div></div>`:''}
+    <hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:14px 0;">
+    <div style="margin-bottom:14px;">
+      <label class="dk-lbl">Behaviors for Decrease (BX)</label>
+      <div style="display:flex;gap:8px;margin-bottom:8px;">
+        <input class="dk-inp" style="flex:1;" placeholder="e.g. Aggression" id="drawerBxInp" value="${drawerNewBx}" oninput="drawerNewBx=this.value" onkeydown="if(event.key==='Enter')addDrawerBx()">
+        <button onclick="addDrawerBx()" style="padding:10px 14px;background:#2563eb;color:#fff;border:none;border-radius:10px;font-family:'Nunito',sans-serif;font-weight:600;cursor:pointer;">+</button>
+      </div>
+      ${bxList.length>0?`<div style="display:flex;flex-wrap:wrap;gap:4px;">${bxChips}</div>`:''}
+    </div>
+    <button onclick="saveDrawerProfile()" ${!hasFila?'disabled':''} style="width:100%;padding:10px;background:${hasFila?'#2563eb':'#475569'};color:#fff;border:none;border-radius:10px;font-family:'Nunito',sans-serif;font-size:14px;font-weight:600;cursor:${hasFila?'pointer':'not-allowed'};">${drawerEditing?'Update Profile':'Save Profile'}</button>
+  `;
+}
+function drawerNameChange(val){
+  drawerForm.rawName=val;
+  if(val.trim())drawerForm.fila=toFiLa(val);
+  renderDrawer();
+  // restore focus
+  setTimeout(()=>{const inp=document.getElementById('drawerNameInp');if(inp){inp.focus();inp.setSelectionRange(inp.value.length,inp.value.length);}},0);
+}
+function removeDrawerProg(i){drawerForm.programs.splice(i,1);renderDrawer();}
+function removeDrawerBx(i){drawerForm.bxList.splice(i,1);renderDrawer();}
+function addDrawerBx(){
+  const val=drawerNewBx.trim();
+  if(!val)return;
+  drawerForm.bxList.push(val);drawerNewBx='';renderDrawer();
+}
+async function drawerScanFiles(e){
+  const files=Array.from(e.target.files);
+  if(!files.length)return;
+  const key=getApiKey();
+  if(!key){drawerScanErr='No API key set. Add it in the Setup tab.';drawerScanStatus='error';renderDrawer();return;}
+  drawerScanStatus='running';drawerScanErr='';renderDrawer();
+  try{
+    for(const file of files){
+      const b64=await compressImg(file);
+      const resp=await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+        body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,
+          messages:[{role:'user',content:[
+            {type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}},
+            {type:'text',text:'Extract ABA program names from this ABADesk screenshot. Shorten each to 1-3 core words, strip qualifiers like Independent/With Prompting/Level/Training. Also find behaviors for decrease labeled BX. Return only JSON: {"programs":["Name"],"bx":["Name"]}. No PII.'}
+          ]}]
+        })
+      });
+      const d=await resp.json();
+      if(d.error)throw new Error(d.error.message||'API error');
+      const txt=d.content&&d.content[0]?d.content[0].text||'':'';
+      const parsed=parseJSON(txt)||{programs:[],bx:[]};
+      const normStr=s=>s.toLowerCase().replace(/\s+/g,' ').trim();
+      const seenP=new Set(drawerForm.programs.map(x=>normStr(x.name)));
+      const seenBx=new Set(drawerForm.bxList.map(x=>normStr(x)));
+      (parsed.programs||[]).forEach(n=>{const k=normStr(n);if(!seenP.has(k)){seenP.add(k);drawerForm.programs.push({name:n,id:mkId()});}});
+      (parsed.bx||[]).forEach(n=>{const k=normStr(n);if(!seenBx.has(k)){seenBx.add(k);drawerForm.bxList.push(n);}});
+    }
+    drawerScanStatus='done';
+  }catch(err){drawerScanErr=err.message;drawerScanStatus='idle';}
+  renderDrawer();
+}
+function saveDrawerProfile(){
+  if(!drawerForm.fila)return;
+  const profiles=loadProfiles();
+  profiles[drawerForm.fila]={fila:drawerForm.fila,total:drawerForm.total,programs:drawerForm.programs,bxList:drawerForm.bxList};
+  saveProfiles(profiles);
+  drawerView='list';renderDrawer();
+}
+
+// ── AUTO-SAVE ─────────────────────────────────────────────
+function autoSave(){
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(()=>{
+    try{localStorage.setItem(SK,JSON.stringify(captureState()));flashSaved();}catch(e){}
+  },600);
+}
+function flashSaved(){const el=document.getElementById('saveInd');el.classList.add('show');setTimeout(()=>el.classList.remove('show'),1800);}
+
+function captureState(){
+  const barChips=Array.from(document.querySelectorAll('#barChips .ch.sa')).map(c=>c.textContent);
+  const mitChips=Array.from(document.querySelectorAll('#mitChips .ch.sg')).map(c=>c.textContent);
+  const contSel=Array.from(document.querySelectorAll('#contG .tb.sel')).map(b=>b.textContent);
+  const skillRows=Array.from(document.querySelectorAll('#skillL .dr')).map(r=>{
+    const cb=r.querySelector('input[type=checkbox]:not(.skNew)');
+    return{name:r.querySelector('.skn').value,unit:r.querySelector('.sku').value,dir:r.querySelector('.skd').value,last:r.querySelector('.skl').value,thisS:r.querySelector('.skt').value,isNew:r.querySelector('.skNew').checked,sel:cb?cb.checked:true};
+  });
+  const behRows=Array.from(document.querySelectorAll('#behL .dr')).map(r=>{
+    const cb=r.querySelector('input[type=checkbox]');
+    return{name:r.querySelector('.bhn').value,dir:r.querySelector('.bhd').value,last:r.querySelector('.bhl').value,thisS:r.querySelector('.bht').value,sel:cb?cb.checked:true};
+  });
+  const incRows=Array.from(document.querySelectorAll('#incL .dr')).map(r=>({count:r.querySelector('.inc').value,rsn:r.querySelector('.inr').value,oth:r.querySelector('.ino')?.value||''}));
+  const examples=Array.from(document.querySelectorAll('#exampleL .ex-ta')).map(e=>e.value);
+  return{
+    step,
+    dow:v('dow'),sDate:v('sDate'),loc:v('loc'),sT:v('sT'),eT:v('eT'),
+    pC:v('pC'),pT:v('pT'),incRows,
+    transSelTxt:document.querySelector('#transG .tb.sel')?.textContent||'',
+    transApp:v('transApp'),transEvid:v('transEvid'),
+    safeSel:document.querySelector('#safeG .tb.sel')?.textContent||'',safeT:v('safeT'),
+    barYNSel:document.querySelector('#barYN .tb.sel')?.textContent||'',
+    barChips,mitChips,barOT:v('barOT'),mitOT:v('mitOT'),
+    contSel,contCust:v('contCust'),
+    skillRows,behRows,
+    behTrackSel:document.querySelector('#behTrackG .tb.sel')?.textContent||'',
+    prodSel:document.querySelector('#prodG .tb.sel')?.textContent||'',
+    respSel:document.querySelector('#respG .tb.sel')?.textContent||'',
+    examples,
+    savedAt:Date.now()
+  };
+}
+function v(id){const el=document.getElementById(id);return el?el.value:'';}
+function set(id,val){const el=document.getElementById(id);if(el&&val!=null)el.value=val;}
+
+function tryLoadSession(){
+  try{
+    const raw=localStorage.getItem(SK);if(!raw)return false;
+    const s=JSON.parse(raw);if(!s||!s.dow)return false;
+    showResumeBanner(s);return true;
+  }catch(e){return false;}
+}
+function showResumeBanner(s){
+  const age=Math.round((Date.now()-s.savedAt)/60000);
+  const ageStr=age<2?'just now':age<60?age+' min ago':Math.round(age/60)+' hrs ago';
+  document.getElementById('resumeBanner').innerHTML=`<div class="rb2"><div><div class="rb2t">Unfinished note found</div><div class="rb2s">Last saved ${ageStr} · Step ${(s.step||0)+1} of 9</div></div><div style="display:flex;gap:8px;"><button class="rb2b" onclick="restoreSession()">Resume →</button><button class="rb2b" style="background:rgba(255,255,255,0.08);" onclick="discardSaved()">Start Fresh</button></div></div>`;
+  addSkillRow();addBehRow();addExample();addExample();
+}
+function restoreSession(){
+  try{
+    const s=JSON.parse(localStorage.getItem(SK));if(!s)return;
+    document.getElementById('resumeBanner').innerHTML='';
+    set('dow',s.dow);set('sDate',s.sDate);set('loc',s.loc);set('sT',s.sT);set('eT',s.eT);calcH();
+    set('pC',s.pC);set('pT',s.pT);calcInc();
+    document.getElementById('incL').innerHTML='';
+    (s.incRows||[]).forEach(ir=>{addInc();const rows=document.querySelectorAll('#incL .dr');const r=rows[rows.length-1];r.querySelector('.inc').value=ir.count;r.querySelector('.inr').value=ir.rsn;if(ir.rsn==='__other__'&&r.querySelector('.ino'))r.querySelector('.ino').value=ir.oth;});
+    if(s.transSelTxt)document.querySelectorAll('#transG .tb').forEach(b=>{if(b.textContent===s.transSelTxt)b.classList.add('sel');});
+    set('transApp',s.transApp);set('transEvid',s.transEvid);
+    if(s.safeSel)document.querySelectorAll('#safeG .tb').forEach(b=>{if(b.textContent===s.safeSel){b.classList.add('sel');if(s.safeSel.includes('concerns'))showEl('safeD',true);}});
+    set('safeT',s.safeT);
+    if(s.barYNSel)document.querySelectorAll('#barYN .tb').forEach(b=>{if(b.textContent===s.barYNSel){b.classList.add('sel');if(s.barYNSel.includes('Yes'))showEl('barD',true);}});
+    (s.barChips||[]).forEach(t=>document.querySelectorAll('#barChips .ch').forEach(c=>{if(c.textContent===t){c.classList.add('sa');if(t.includes('describe'))showEl('barOW',true);}}));
+    (s.mitChips||[]).forEach(t=>document.querySelectorAll('#mitChips .ch').forEach(c=>{if(c.textContent===t){c.classList.add('sg');if(t==='other')showEl('mitOW',true);}}));
+    set('barOT',s.barOT);set('mitOT',s.mitOT);
+    (s.contSel||[]).forEach(t=>document.querySelectorAll('#contG .tb').forEach(b=>{if(b.textContent===t)b.classList.add('sel');}));updContCount();
+    set('contCust',s.contCust);
+    document.getElementById('skillL').innerHTML='';
+    (s.skillRows||[]).forEach(sr=>{addSkillRow({name:sr.name,lastValue:sr.last,thisValue:sr.thisS,unit:sr.unit,_sel:sr.sel});const rows=document.querySelectorAll('#skillL .dr');const r=rows[rows.length-1];r.querySelector('.skd').value=sr.dir;r.querySelector('.skNew').checked=sr.isNew;});
+    if(s.behTrackSel)document.querySelectorAll('#behTrackG .tb').forEach(b=>{b.classList.remove('sel');if(b.textContent===s.behTrackSel){b.classList.add('sel');showEl('behContent',!s.behTrackSel.includes('Not'));}});
+    document.getElementById('behL').innerHTML='';
+    (s.behRows||[]).forEach(br=>{addBehRow({name:br.name,lastValue:br.last,thisValue:br.thisS,_sel:br.sel});const rows=document.querySelectorAll('#behL .dr');const r=rows[rows.length-1];r.querySelector('.bhd').value=br.dir;});
+    if(s.prodSel)document.querySelectorAll('#prodG .tb').forEach(b=>{if(b.textContent===s.prodSel)b.classList.add('sel');});
+    if(s.respSel)document.querySelectorAll('#respG .tb').forEach(b=>{if(b.textContent===s.respSel)b.classList.add('sel');});
+    document.getElementById('exampleL').innerHTML='';
+    (s.examples||[]).forEach(ex=>{addExample();const rows=document.querySelectorAll('#exampleL .dr');const r=rows[rows.length-1];r.querySelector('.ex-ta').value=ex;});
+    if(!document.querySelector('#exampleL .dr')){addExample();addExample();}
+    if(s.step>0)goStep(s.step);
+  }catch(e){console.error('Restore failed',e);}
+}
+function discardSaved(){
+  localStorage.removeItem(SK);
+  document.getElementById('resumeBanner').innerHTML='';
+  document.getElementById('skillL').innerHTML='';
+  document.getElementById('behL').innerHTML='';
+  document.getElementById('exampleL').innerHTML='';
+  addSkillRow();addBehRow();addExample();addExample();
+}
+function confirmClear(){
+  if(confirm('Clear this session and start fresh? Profile, phrase bank, and API key are kept.')){
+    localStorage.removeItem(SK);
+    ['dow','sDate','loc','sT','eT','tH','pC','pT','contCust','transApp','transEvid','safeT','barOT','mitOT'].forEach(id=>set(id,''));
+    document.getElementById('sDate').valueAsDate=new Date();
+    ['skillL','behL','incL','exampleL','outSec'].forEach(id=>document.getElementById(id).innerHTML='');
+    document.querySelectorAll('.tb.sel').forEach(b=>b.classList.remove('sel'));
+    document.querySelectorAll('.ch.sa,.ch.sg').forEach(c=>{c.classList.remove('sa');c.classList.remove('sg');});
+    ['safeD','barD','barOW','mitOW','incW'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add('hidden');});
+    const btns=document.querySelectorAll('#behTrackG .tb');if(btns[0])btns[0].classList.add('sel');showEl('behContent',true);
+    updContCount();
+    prevImgs=[];currImgs=[];
+    document.getElementById('prevTh').innerHTML='';
+    document.getElementById('currTh').innerHTML='';
+    document.getElementById('scanSt').textContent='';
+    updScanBtn();
+    addSkillRow();addBehRow();addExample();addExample();
+    document.querySelectorAll('.tab').forEach((t,i)=>{t.classList.remove('active','done');if(i===0)t.classList.add('active');});
+    document.getElementById('pgb').style.width='0%';
+    for(let i=0;i<9;i++){const p=document.getElementById('s'+i);if(p)p.classList.remove('active');}
+    document.getElementById('s0').classList.add('active');
+    step=0;window.scrollTo(0,0);
+  }
+}
+
+// ── NAV ───────────────────────────────────────────────────
+function goStep(n){
+  document.getElementById('s'+step).classList.remove('active');
+  document.getElementById('s'+n).classList.add('active');
+  const tabs=document.querySelectorAll('.tab');
+  tabs[step].classList.remove('active');
+  if(n>step)tabs[step].classList.add('done');
+  tabs[n].classList.add('active');
+  step=n;
+  document.getElementById('pgb').style.width=((n/8)*100)+'%';
+  if(n===7)buildChecklist();
+  autoSave();window.scrollTo(0,0);
+}
+
+// ── FORM HELPERS ──────────────────────────────────────────
+function selT(btn,gid){document.querySelectorAll('#'+gid+' .tb').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');}
+function togC(el,cls){el.classList.toggle(cls);}
+function showEl(id,show){const el=document.getElementById(id);if(el)el.classList.toggle('hidden',!show);}
+function calcH(){
+  const s=document.getElementById('sT').value,e=document.getElementById('eT').value;
+  if(s&&e){const[sh,sm]=s.split(':').map(Number),[eh,em]=e.split(':').map(Number);const mins=(eh*60+em)-(sh*60+sm);if(mins>0){const h=mins/60;document.getElementById('tH').value=h%1===0?h+(h===1?' hour':' hours'):h.toFixed(1)+' hours';}}
+}
+function calcInc(){
+  const c=parseInt(document.getElementById('pC').value)||0,t=parseInt(document.getElementById('pT').value)||0;
+  showEl('incW',t-c>0);
+}
+function updContCount(){
+  const n=document.querySelectorAll('#contG .tb.sel').length;
+  document.getElementById('contCount').textContent=n+' / 3 selected';
+  document.getElementById('contCount').style.color=n===3?'var(--green)':'var(--teal)';
+}
+function togCont(btn){
+  const sel=document.querySelectorAll('#contG .tb.sel');
+  if(!btn.classList.contains('sel')&&sel.length>=3){document.getElementById('contW').classList.remove('hidden');return;}
+  document.getElementById('contW').classList.add('hidden');btn.classList.toggle('sel');updContCount();autoSave();
+}
+function addInc(){
+  const d=document.createElement('div');d.className='dr';d.style.position='relative';
+  d.innerHTML=`<div class="fr t">
+    <div><label>Count not completed</label><input type="number" class="inc" min="1" max="99" placeholder="1" oninput="autoSave()"></div>
+    <div><label>Reason</label>
+      <select class="inr" onchange="togIncOth(this);autoSave()">
+        <option value="lack of opportunity">Lack of opportunity</option>
+        <option value="time constraints">Time constraints</option>
+        <option value="the antecedent event did not occur naturally during the session">Antecedent not natural</option>
+        <option value="being a social group program not applicable to today's session format">Social group</option>
+        <option value="being a rotating chores program not scheduled for this session">Rotating chores</option>
+        <option value="client interfering behaviors preventing program access">Interfering behaviors</option>
+        <option value="weak motivating operations">Weak motivation</option>
+        <option value="requiring a specific setting not available today">Setting unavailable</option>
+        <option value="client requiring extended reinforcement periods">Extended reinforcement</option>
+        <option value="prerequisite skill work being needed first">Prerequisite needed</option>
+        <option value="__other__">Other — type below</option>
+      </select>
+    </div>
+  </div>
+  <div class="inc-oth" style="display:none;margin-top:6px;">
+    <label>Describe reason</label>
+    <input type="text" class="ino" placeholder="e.g., materials not available" style="margin-top:3px;" oninput="autoSave()">
+  </div>
+  <button class="rb" onclick="this.closest('.dr').remove();autoSave()" style="position:absolute;top:10px;right:10px;">✕</button>`;
+  document.getElementById('incL').appendChild(d);
+}
+function togIncOth(sel){const w=sel.closest('.dr').querySelector('.inc-oth');if(w)w.style.display=sel.value==='__other__'?'block':'none';}
+
+// ── IMAGE UPLOAD ──────────────────────────────────────────
+function doDrag(e,over,zid){e.preventDefault();document.getElementById(zid).classList.toggle('dov',over);}
+function doDrop(e,type){e.preventDefault();document.getElementById(type==='prev'?'prevZ':'currZ').classList.remove('dov');procFiles(Array.from(e.dataTransfer.files),type);}
+function doFiles(e,type){procFiles(Array.from(e.target.files),type);}
+function procFiles(files,type){
+  files.forEach(f=>{
+    if(!f.type.startsWith('image/'))return;
+    const r=new FileReader();
+    r.onload=ev=>{
+      const b64=ev.target.result;
+      if(type==='prev')prevImgs.push(b64);else currImgs.push(b64);
+      addThumb(b64,type,(type==='prev'?prevImgs:currImgs).length-1);
+      updScanBtn();
+    };
+    r.readAsDataURL(f);
+  });
+}
+function addThumb(b64,type,idx){
+  const w=document.createElement('div');w.className='tw';
+  w.innerHTML=`<img src="${b64}" class="th"><button class="tr" onclick="remThumb('${type}',${idx},this.closest('.tw'))">✕</button>`;
+  document.getElementById(type+'Th').appendChild(w);
+}
+function remThumb(type,idx,wrap){if(type==='prev')prevImgs.splice(idx,1);else currImgs.splice(idx,1);wrap.remove();updScanBtn();}
+function updScanBtn(){
+  const hasKey=!!getApiKey();
+  const hasImgs=prevImgs.length>0||currImgs.length>0;
+  document.getElementById('scanBtn').disabled=!(hasKey&&hasImgs);
+}
+
+// ── IMAGE COMPRESSION ─────────────────────────────────────
+function compressImg(file){
+  return new Promise(res=>{
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      const img=new Image();
+      img.onload=()=>{
+        try{
+          const MAX=800;
+          let w=img.naturalWidth||img.width,h=img.naturalHeight||img.height;
+          if(w===0||h===0){res(ev.target.result.split(',')[1]);return;}
+          const scale=Math.min(1,MAX/Math.max(w,h));
+          w=Math.round(w*scale);h=Math.round(h*scale);
+          const c=document.createElement('canvas');c.width=w;c.height=h;
+          c.getContext('2d').drawImage(img,0,0,w,h);
+          res(c.toDataURL('image/jpeg',0.6).split(',')[1]);
+        }catch(e){res(ev.target.result.split(',')[1]);}
+      };
+      img.onerror=()=>res(ev.target.result.split(',')[1]);
+      img.src=ev.target.result;
+    };
+    reader.onerror=()=>res(null);
+    reader.readAsDataURL(file);
+  });
+}
+function parseJSON(txt){try{return JSON.parse(txt.replace(/```json|```/g,'').trim());}catch{return null;}}
+
+// ── AI SCAN ───────────────────────────────────────────────
+async function doScan(){
+  const key=getApiKey();
+  if(!key){document.getElementById('scanSt').textContent='No API key. Enter it above.';document.getElementById('scanSt').className='scst er';return;}
+  const btn=document.getElementById('scanBtn'),st=document.getElementById('scanSt');
+  btn.disabled=true;btn.textContent='Scanning...';
+  st.textContent='Sending images to AI...';st.className='scst ld';
+  const content=[];
+  // Compress and add all images
+  const allImgs=[...prevImgs,...currImgs];
+  for(const b64 of allImgs){
+    const mt=b64.split(';')[0].split(':')[1];
+    const raw=b64.split(',')[1];
+    // compress via canvas
+    await new Promise(res=>{
+      const img=new Image();
+      img.onload=()=>{
+        try{
+          const MAX=800;let w=img.naturalWidth||img.width,h=img.naturalHeight||img.height;
+          const scale=Math.min(1,MAX/Math.max(w,h));w=Math.round(w*scale);h=Math.round(h*scale);
+          const c=document.createElement('canvas');c.width=w;c.height=h;
+          c.getContext('2d').drawImage(img,0,0,w,h);
+          const comp=c.toDataURL('image/jpeg',0.6).split(',')[1];
+          content.push({type:'image',source:{type:'base64',media_type:'image/jpeg',data:comp}});
+        }catch(e){content.push({type:'image',source:{type:'base64',media_type:mt,data:raw}});}
+        res();
+      };
+      img.onerror=()=>{content.push({type:'image',source:{type:'base64',media_type:mt,data:raw}});res();};
+      img.src=b64;
+    });
+  }
+  const pc=prevImgs.length,cc=currImgs.length;
+  content.push({type:'text',text:`You are analyzing ABAdesk session screenshots for an ABA therapy note.
+First ${pc} image(s) = PREVIOUS session. Next ${cc} image(s) = CURRENT session.
+Columns: Program Name | Value | Phase. Staff name at bottom = navigation element, ignore it.
+RULES:
+1. Only include programs in BOTH sessions.
+2. Behaviors to decrease = event counts (not percentages).
+3. Name field = short clinical name only (1-4 words, strip set numbers, target numbers, method labels in parentheses, procedural detail after colons).
+4. Strip % signs — numbers only.
+Return ONLY raw JSON, no markdown, no backticks:
+{"skills":[{"name":"NET Attending","lastValue":"50","thisValue":"83","unit":"% correct"}],"behaviors":[{"name":"Aggression","lastValue":"9","thisValue":"4"}]}`});
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:2000,messages:[{role:'user',content:content}]})
+    });
+    if(!res.ok){const e=await res.text();throw new Error('HTTP '+res.status+': '+e.substring(0,200));}
+    const envelope=await res.json();
+    if(envelope.error)throw new Error(envelope.error.message||'API error');
+    let innerText='';
+    if(envelope.content&&Array.isArray(envelope.content))innerText=envelope.content.map(c=>c.type==='text'?c.text||'':'').join('');
+    const stripped=innerText.replace(/```json/g,'').replace(/```/g,'').trim();
+    const jS=stripped.indexOf('{'),jE=stripped.lastIndexOf('}');
+    if(jS===-1||jE===-1)throw new Error('No JSON found in response.');
+    let parsed;
+    try{parsed=JSON.parse(stripped.substring(jS,jE+1));}
+    catch(e){throw new Error('Could not parse response: '+e.message);}
+    const skills=(parsed.skills||[]).filter(s=>s.name&&s.lastValue!=null&&s.thisValue!=null);
+    const behs=(parsed.behaviors||[]).filter(b=>b.name&&b.lastValue!=null&&b.thisValue!=null);
+    const hrsNum=Math.max(1,Math.round(parseFloat(document.getElementById('tH').value)||3));
+    const inc=skills.filter(s=>parseFloat(s.thisValue)>parseFloat(s.lastValue)).sort((a,b)=>(parseFloat(b.thisValue)-parseFloat(b.lastValue))-(parseFloat(a.thisValue)-parseFloat(a.lastValue)));
+    const mai=skills.filter(s=>parseFloat(s.thisValue)===parseFloat(s.lastValue));
+    const dec=skills.filter(s=>parseFloat(s.thisValue)<parseFloat(s.lastValue));
+    const pool=[...inc,...mai,...dec];
+    pool.forEach((s,i)=>{s._sel=i<hrsNum;});
+    const sortedBehs=[...behs].sort((a,b)=>(parseFloat(b.lastValue)-parseFloat(b.thisValue))-(parseFloat(a.lastValue)-parseFloat(a.thisValue)));
+    sortedBehs.forEach((b,i)=>{b._sel=i<1;});
+    document.getElementById('skillL').innerHTML='';
+    document.getElementById('behL').innerHTML='';
+    if(pool.length>0)pool.forEach(s=>addSkillRow(s));else addSkillRow();
+    if(sortedBehs.length>0)sortedBehs.forEach(b=>addBehRow(b));else addBehRow();
+    // show scan banner on data tab
+    document.getElementById('scanBanner').classList.remove('hidden');
+    document.getElementById('scanBanner').textContent=`✓ Scan complete — ${pool.length} program(s) found, ${Math.min(hrsNum,pool.length)} auto-selected. ${sortedBehs.length} behavior(s) found.`;
+    st.textContent=`✓ Scan complete — ${pool.length} program(s), ${Math.min(hrsNum,pool.length)} selected. ${sortedBehs.length} behavior(s). Go to the Data tab to review.`;
+    st.className='scst ok';
+    autoSave();
+  }catch(err){
+    st.textContent='Scan failed: '+err.message;st.className='scst er';
+    if(!document.querySelector('#skillL .dr'))addSkillRow();
+    if(!document.querySelector('#behL .dr'))addBehRow();
+  }
+  btn.disabled=false;btn.textContent='Re-scan Images';
+}
+
+// ── DATA ROWS ─────────────────────────────────────────────
+function addSkillRow(data){
+  const d=document.createElement('div');d.className='dr';
+  const sel=data&&data._sel!==undefined?data._sel:true;
+  const uid='sk'+Date.now()+Math.floor(Math.random()*9999);
+  const uid2='sn'+Date.now()+Math.floor(Math.random()*9999);
+  d.style.opacity=sel?'1':'0.55';
+  d.innerHTML=`<div class="drh"><span class="drt">Skill Program</span><button class="rb" onclick="this.closest('.dr').remove();autoSave()">✕</button></div>
+  <div class="sel-pill ${sel?'on':'off'}" id="pill_${uid}"><input type="checkbox" id="${uid}" ${sel?'checked':''} onchange="togSelPill(this,'${uid}');autoSave()"><label for="${uid}">${sel?'Selected for note':'Not selected — check to include'}</label></div>
+  <div class="fr t">
+    <div><label>Program Name</label><input type="text" class="skn" value="${esc(data&&data.name||'')}" placeholder="e.g., NET Attending" oninput="autoSave()"></div>
+    <div><label>Unit</label><select class="sku" onchange="autoSave()"><option value="% correct"${data&&data.unit==='% correct'?' selected':''}>% correct</option><option value="% independent"${data&&data.unit==='% independent'?' selected':''}>% independent</option></select></div>
+    <div><label>Direction</label><select class="skd" onchange="autoSave()"><option value="auto">Auto-detect</option><option value="increase">Increase</option><option value="decrease">Decrease</option><option value="maintenance">Maintenance</option></select></div>
+  </div>
+  <div class="fr">
+    <div><label>Last Session %</label><input type="text" class="skl" value="${esc(data&&data.lastValue||'')}" placeholder="50" oninput="autoSkDir(this);autoSave()"></div>
+    <div><label>This Session %</label><input type="text" class="skt" value="${esc(data&&data.thisValue||'')}" placeholder="83" oninput="autoSkDir(this);autoSave()"></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:7px;margin-top:4px;"><input type="checkbox" class="skNew" id="${uid2}" onchange="autoSave()"><label for="${uid2}" style="text-transform:none;font-size:0.74rem;color:var(--blue);cursor:pointer;letter-spacing:0;font-weight:600;">New program this session — first time targeted</label></div>`;
+  document.getElementById('skillL').appendChild(d);
+  if(data&&data.lastValue&&data.thisValue)autoSkDir(d.querySelector('.skl'));
+}
+function togSelPill(cb,uid){
+  const pill=document.getElementById('pill_'+uid);const row=cb.closest('.dr');
+  if(cb.checked){pill.className='sel-pill on';cb.nextElementSibling.textContent='Selected for note';row.style.opacity='1';}
+  else{pill.className='sel-pill off';cb.nextElementSibling.textContent='Not selected — check to include';row.style.opacity='0.55';}
+}
+function autoSkDir(input){
+  const row=input.closest('.dr');
+  const l=parseFloat(row.querySelector('.skl').value),t=parseFloat(row.querySelector('.skt').value);
+  const sel=row.querySelector('.skd');
+  if(!isNaN(l)&&!isNaN(t)&&sel.value==='auto')sel.value=t>l?'increase':t<l?'decrease':'maintenance';
+}
+function addBehRow(data){
+  const d=document.createElement('div');d.className='dr';
+  const sel=data&&data._sel!==undefined?data._sel:true;
+  const uid='bh'+Date.now()+Math.floor(Math.random()*9999);
+  d.style.opacity=sel?'1':'0.55';
+  d.innerHTML=`<div class="drh"><span class="drt">Behavior to Decrease</span><button class="rb" onclick="this.closest('.dr').remove();autoSave()">✕</button></div>
+  <div class="sel-pill ${sel?'on':'off'}" id="pill_${uid}"><input type="checkbox" id="${uid}" ${sel?'checked':''} onchange="togSelPill(this,'${uid}');autoSave()"><label for="${uid}">${sel?'Selected for note':'Not selected — check to include'}</label></div>
+  <div class="fr">
+    <div><label>Behavior Name</label><input type="text" class="bhn" value="${esc(data&&data.name||'')}" placeholder="e.g., Aggression" oninput="autoSave()"></div>
+    <div><label>Direction</label><select class="bhd" onchange="autoSave()"><option value="auto">Auto-detect</option><option value="decreased">Decreased</option><option value="increased">Increased</option><option value="maintained">Maintained</option></select></div>
+  </div>
+  <div class="fr">
+    <div><label>Last Session (events)</label><input type="text" class="bhl" value="${esc(data&&data.lastValue||'')}" placeholder="7" oninput="autoBhDir(this);autoSave()"></div>
+    <div><label>This Session (events)</label><input type="text" class="bht" value="${esc(data&&data.thisValue||'')}" placeholder="2" oninput="autoBhDir(this);autoSave()"></div>
+  </div>`;
+  document.getElementById('behL').appendChild(d);
+  if(data&&data.lastValue&&data.thisValue)autoBhDir(d.querySelector('.bhl'));
+}
+function autoBhDir(input){
+  const row=input.closest('.dr');
+  const l=parseFloat(row.querySelector('.bhl').value),t=parseFloat(row.querySelector('.bht').value);
+  const sel=row.querySelector('.bhd');
+  if(!isNaN(l)&&!isNaN(t)&&sel.value==='auto')sel.value=t<l?'decreased':t>l?'increased':'maintained';
+}
+
+// ── CLIENT RESPONSE EXAMPLES ──────────────────────────────
+function addExample(){
+  const d=document.createElement('div');d.className='dr';
+  const idx=document.querySelectorAll('#exampleL .dr').length+1;
+  d.innerHTML=`<div class="drh"><span class="drt">Example ${idx}</span><button class="rb" onclick="this.closest('.dr').remove();autoSave()">✕</button></div>
+  <select style="width:100%;padding:7px 10px;border:1.5px solid var(--bd);border-radius:6px;font-family:'Nunito',sans-serif;font-size:0.85rem;color:var(--ink);background:var(--s2);margin-bottom:6px;" onchange="if(this.value){this.closest('.dr').querySelector('.ex-ta').value=this.value;this.value='';autoSave();}">
+    <option value="">Use a starter phrase...</option>
+    ${STARTERS.map(s=>`<option value="${esc(s)}">${s}</option>`).join('')}
+  </select>
+  <textarea class="ex-ta" placeholder="Write your specific example here..." oninput="autoSave()"></textarea>`;
+  document.getElementById('exampleL').appendChild(d);
+}
+function esc(v){return v?String(v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'):''}
+
+// ── CHECKLIST ─────────────────────────────────────────────
+function buildChecklist(){
+  const hasSelSkill=Array.from(document.querySelectorAll('#skillL .dr')).some(r=>{const cb=r.querySelector('input[type=checkbox]:not(.skNew)');return(cb?cb.checked:true)&&r.querySelector('.skn').value&&r.querySelector('.skt').value;});
+  const notTracking=document.querySelector('#behTrackG .tb:nth-child(2)')?.classList.contains('sel');
+  const hasSelBeh=notTracking||Array.from(document.querySelectorAll('#behL .dr')).some(r=>{const cb=r.querySelector('input[type=checkbox]');return(cb?cb.checked:true)&&r.querySelector('.bhn').value;});
+  const exCount=Array.from(document.querySelectorAll('#exampleL .ex-ta')).filter(t=>t.value.trim()).length;
+  const items=[
+    {l:'Day and date entered',p:!!(v('dow')&&v('sDate')),s:1},
+    {l:'Start and end time entered',p:!!(v('sT')&&v('eT')),s:1},
+    {l:'Programs completed entered',p:!!(v('pC')&&v('pT')),s:1},
+    {l:'Transition type selected',p:!!document.querySelector('#transG .tb.sel'),s:2},
+    {l:'Client appearance entered',p:!!v('transApp'),s:2},
+    {l:'Evidence of appearance entered',p:!!v('transEvid'),s:2},
+    {l:'Medical/safety addressed',p:!!document.querySelector('#safeG .tb.sel'),s:2},
+    {l:'Barriers addressed',p:!!document.querySelector('#barYN .tb.sel'),s:3},
+    {l:'Exactly 3 content areas selected',p:document.querySelectorAll('#contG .tb.sel').length===3,s:4},
+    {l:'At least one skill data row selected',p:hasSelSkill,s:5},
+    {l:'Behavior tracking addressed',p:hasSelBeh,s:5},
+    {l:'Session productivity selected',p:!!document.querySelector('#prodG .tb.sel'),s:5},
+    {l:'Response to treatment selected',p:!!document.querySelector('#respG .tb.sel'),s:5},
+    {l:'At least 2 client response examples',p:exCount>=2,s:6},
+  ];
+  const con=document.getElementById('clItems');con.innerHTML='';
+  const allPass=items.every(i=>i.p);
+  items.forEach(item=>{const div=document.createElement('div');div.className='ci';div.innerHTML=`<div class="ck ${item.p?'p':'f'}">${item.p?'✓':'!'}</div><div style="flex:1">${item.l}</div>${!item.p?`<span class="cgo" onclick="goStep(${item.s})">Fix it →</span>`:''}`;con.appendChild(div);});
+  if(allPass){const ok=document.createElement('div');ok.className='sbox';ok.style.marginTop='10px';ok.innerHTML='<strong>All checks passed.</strong> Ready to generate.';con.appendChild(ok);}
+}
+
+// ── PHRASE BANK ───────────────────────────────────────────
+function loadPhrases(){try{phrases=JSON.parse(localStorage.getItem(PHRASE_K)||'[]');}catch(e){phrases=[];}}
+function savePhrases(){try{localStorage.setItem(PHRASE_K,JSON.stringify(phrases));}catch(e){}}
+function savePhrase(){const i=document.getElementById('newP');const t=i.value.trim();if(!t)return;phrases.push(t);savePhrases();renderPhrases();i.value='';}
+function renderPhrases(){
+  const l=document.getElementById('phraseL');l.innerHTML='';
+  if(!phrases.length){l.innerHTML='<div style="font-size:0.74rem;color:var(--il);padding:5px 0;">No phrases saved yet.</div>';return;}
+  phrases.forEach((p,i)=>{const d=document.createElement('div');d.className='pi';d.innerHTML=`<span class="pt">${p}</span><button class="pub" onclick="navigator.clipboard.writeText(phrases[${i}])">Copy</button><button class="pdb" onclick="delPhrase(${i})">✕</button>`;l.appendChild(d);});
+}
+function delPhrase(i){phrases.splice(i,1);savePhrases();renderPhrases();}
+function addToPhrase(text){phrases.push(text.trim());savePhrases();renderPhrases();alert('Saved to Phrase Bank!');}
+
+// ── GENERATE NOTES ────────────────────────────────────────
+function runCheck(){buildChecklist();genNotes();}
+
+function genNotes(){
+  const pT=v('pT')||'0';
+  const pC=v('pC')||'0';
+  const dow=v('dow')||'___';
+  const date=fmtD(v('sDate'));
+  const loc=v('loc')||'the clinic';
+  const sT=fmtT(v('sT'));
+  const eT=fmtT(v('eT'));
+  const hrsRaw=parseFloat(v('tH'))||0;
+  const hrsLabel=v('tH')||'__ hour';
+  const hrsNum=Math.max(1,Math.round(hrsRaw));
+  const clientCode=activeClient?activeClient.fila:'[client]';
+
+  // ── NOTE 1: Session Details & Programs ──────────────────
+  const hasBar=document.querySelector('#barYN .tb.sel')?.textContent.includes('Yes');
+  const barChips=Array.from(document.querySelectorAll('#barChips .ch.sa')).map(c=>c.textContent.toLowerCase()).filter(Boolean);
+  const barOT=v('barOT');if(barOT)barChips.push(barOT.toLowerCase());
+  const mits=Array.from(document.querySelectorAll('#mitChips .ch.sg')).map(c=>c.textContent).filter(Boolean);
+  const mitOT=v('mitOT');if(mitOT)mits.push(mitOT);
+
+  let n1=`Session commenced today, ${dow}, ${date} from ${sT} to ${eT}, ${hrsLabel} session, in the ${loc} as regularly scheduled. `;
+  if(!hasBar){n1+=`There were no barriers to treatment. `;}
+  else{
+    const bs=barChips.join('; ');
+    const ms=mits.length?mits.join(', '):'___';
+    n1+=`There were barriers to treatment. Barriers included ${bs}; to mitigate, technician ${ms} and client responded by completing tasks presented. `;
+  }
+  n1+=`The client was an active participant and the technician was able to complete ${pC}/${pT} programs.`;
+  const incRows=Array.from(document.querySelectorAll('#incL .dr'));
+  if(incRows.length){
+    const sentences=incRows.map(r=>{
+      const count=r.querySelector('.inc').value||'?';
+      const rsn=r.querySelector('.inr').value;
+      const finalRsn=rsn==='__other__'?(r.querySelector('.ino')?.value||'other reasons'):rsn;
+      return ` ${count}/${pT} programs were not worked on due to ${finalRsn}.`;
+    });
+    n1+=sentences.join('');
+  }
+
+  // ── NOTE 2: Client Transition & Safety ──────────────────
+  const transType=document.querySelector('#transG .tb.sel')?.textContent||'independently';
+  const transApp=v('transApp')||'___';
+  const transEvid=v('transEvid')||'___';
+  const safeWere=document.querySelector('#safeG .tb.sel')?.textContent.includes('Were concerns')?'were':'were no';
+  const safeT=v('safeT')||'';
+  let n3=`Client transitioned into the session ${transType}, and appeared ${transApp} as evidenced by ${transEvid}. There ${safeWere} medical or safety concerns that arose during the session`;
+  if(safeWere==='were'&&safeT)n3+=` such as ${safeT}.`;
+  else n3+='.';
+
+  // ── NOTE 3: Content Areas ────────────────────────────────
+  const contBtns=Array.from(document.querySelectorAll('#contG .tb.sel')).map(b=>b.textContent);
+  const contCust=v('contCust').trim();if(contCust)contBtns.push(contCust);
+  let n4='';
+  if(contBtns.length>=3){
+    const last=contBtns[contBtns.length-1];
+    const rest=contBtns.slice(0,-1);
+    n4=`The following content areas were targeted during the session: ${rest.join(', ')}, and ${last}.`;
+  } else if(contBtns.length>0){
+    n4=`The following content areas were targeted during the session: ${contBtns.join(', ')}.`;
+  }
+
+  // ── NOTE 4: Degree of Progress ───────────────────────────
+  const skills=Array.from(document.querySelectorAll('#skillL .dr')).filter(r=>{
+    const cb=r.querySelector('input[type=checkbox]:not(.skNew)');
+    return(cb?cb.checked:true)&&r.querySelector('.skn').value&&r.querySelector('.skt').value;
+  }).map(r=>({
+    name:r.querySelector('.skn').value,
+    dir:r.querySelector('.skd').value==='auto'?'increase':r.querySelector('.skd').value,
+    unit:r.querySelector('.sku').value,
+    last:r.querySelector('.skl').value,
+    thisS:r.querySelector('.skt').value,
+    isNew:r.querySelector('.skNew').checked,
+  }));
+  const n5=skills.map(s=>{
+    if(s.isNew)return`An increase was seen from last session to this session in the following area: ${s.name} — new program, ${s.thisS}% correct this session as initial baseline.`;
+    return`An ${s.dir} was seen from last session to this session in the following area: ${s.name} - ${s.last}% correct last session to ${s.thisS}% correct this session.`;
+  }).join(' ');
+
+  // ── NOTE 5: Areas of Strong Performance ─────────────────
+  const strong=skills.filter(s=>!s.isNew&&(s.dir==='increase'||s.dir==='maintenance'));
+  let n6='';
+  if(strong.length===1){
+    n6=`Areas of strong performance include: ${strong[0].name} at ${strong[0].thisS}%.`;
+  } else if(strong.length===2){
+    n6=`Areas of strong performance include: ${strong[0].name} at ${strong[0].thisS}%, and ${strong[1].name} at ${strong[1].thisS}%.`;
+  } else if(strong.length>=3){
+    const last=strong[strong.length-1];
+    const rest=strong.slice(0,-1).map(s=>`${s.name} at ${s.thisS}%`).join(', ');
+    n6=`Areas of strong performance include: ${rest}, and ${last.name} at ${last.thisS}%.`;
+  }
+
+  // ── NOTE 6: Behavior for Decrease ───────────────────────
+  const notTracking=document.querySelector('#behTrackG .tb:nth-child(2)')?.classList.contains('sel');
+  const prod=document.querySelector('#prodG .tb.sel')?.textContent||'productive';
+  const resp=document.querySelector('#respG .tb.sel')?.textContent||'significant';
+  let n7='';
+  if(notTracking){
+    n7=`No behaviors to decrease were tracked during today's session. The client had a ${prod} session. The client had a ${resp} response to treatment.`;
+  } else {
+    const behs=Array.from(document.querySelectorAll('#behL .dr')).filter(r=>{
+      const cb=r.querySelector('input[type=checkbox]');
+      return(cb?cb.checked:true)&&r.querySelector('.bhn').value;
+    }).map(r=>({
+      name:r.querySelector('.bhn').value,
+      dir:r.querySelector('.bhd').value==='auto'?'maintained':r.querySelector('.bhd').value,
+      last:r.querySelector('.bhl').value,
+      thisS:r.querySelector('.bht').value,
+    }));
+    const bxSentences=behs.map(b=>`${b.name} ${b.dir} from ${b.last} events last session to ${b.thisS} events this session.`).join(' ');
+    n7=`${bxSentences}${bxSentences?' ':''}The client had a ${prod} session. The client had a ${resp} response to treatment.`;
+  }
+
+  // ── NOTE 7: Client Specific Response ────────────────────
+  const exs=Array.from(document.querySelectorAll('#exampleL .ex-ta')).map(t=>t.value.trim()).filter(Boolean);
+  const n8=exs.length>=2?exs.map((e,i)=>`${i+1}. ${e}`).join('\n'):'';
+
+  // ── RENDER ───────────────────────────────────────────────
+  const sections=[
+    {title:'Session Details & Programs',text:n1,hc:'h1'},
+    {title:'Client Transition & Medical/Safety Concerns',text:n3,hc:'h2'},
+    {title:'Content Areas',text:n4,hc:'h3'},
+    {title:'Degree of Progress',text:n5,hc:'h1'},
+    {title:'Areas of Strong Performance',text:n6||'[Leave blank — no increases or maintains this session]',hc:'h2'},
+    {title:'Behavior for Decrease',text:n7,hc:'h3'},
+    {title:'Client Specific Response to Treatment',text:n8,hc:'h4'},
+  ];
+  const out=document.getElementById('outSec');out.innerHTML='';
+  sections.forEach(sec=>{
+    const b=document.createElement('div');b.className='nb';
+    b.innerHTML=`<div class="nbh ${sec.hc}">${sec.title}<div style="display:flex;gap:7px;align-items:center;"><button class="spb" onclick="addToPhrase(this.closest('.nb').querySelector('.nt').textContent)">Save to Bank</button><button class="cbtn" onclick="cpNote(this)">Copy</button></div></div><div class="nt">${sec.text}</div>`;
+    out.appendChild(b);
+  });
+  goStep(8);autoSave();
+}
+
+function cpNote(btn){const t=btn.closest('.nb').querySelector('.nt').textContent;navigator.clipboard.writeText(t).then(()=>{btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);}).catch(()=>{});}
+function copyAll(){
+  const all=Array.from(document.querySelectorAll('.nt')).map(e=>e.textContent).join('\n\n---\n\n');
+  navigator.clipboard.writeText(all).then(()=>{const b=document.querySelector('.cab');b.textContent='Copied!';setTimeout(()=>b.textContent='Copy All Notes to Clipboard',2500);}).catch(()=>{});
+}
+function fmtD(v){if(!v)return'__/__/____';const d=new Date(v+'T12:00:00');return(d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear();}
+function fmtT(v){if(!v)return'___';const[h,m]=v.split(':').map(Number);return(h%12||12)+':'+(m+'').padStart(2,'0')+(h>=12?'pm':'am');}
+</script>
+</body>
+</html>
