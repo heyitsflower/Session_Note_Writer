@@ -1106,10 +1106,10 @@ async function doScan(){
 First ${pc} image(s) = PREVIOUS session. Next ${cc} image(s) = CURRENT session.
 
 MASTER PROGRAM LIST (from client profile):
-${masterList.map((n,i)=>`${i+1}. ${n}`).join('\n')}
+${masterList.map((n,i)=>(i+1)+'. '+n).join('\n')}
 
 BX LIST (behaviors to decrease, from client profile):
-${bxList.length>0?bxList.map((b,i)=>`${i+1}. ${b}`).join('\n'):'(none)'}
+${bxList.length>0?bxList.map((b,i)=>(i+1)+'. '+b).join('\n'):'(none)'}
 
 INSTRUCTIONS:
 1. SKILLS: For each program in the master list, find its percentage data in BOTH sessions. Only include programs that appear in both sessions with percentage data. Return last session % and this session % as numbers only (no % sign).
