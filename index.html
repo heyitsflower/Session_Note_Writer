@@ -759,19 +759,7 @@ async function drawerScanFiles(e){
         body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,
           messages:[{role:'user',content:[
             {type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}},
-            {type:'text',text:`You are reading an ABA therapy program list screenshot.
-
-TASK 1 — Programs:
-Extract all ABA program names. For each name:
-- Strip zone or location labels (these are mythical animal names or similar group identifiers like "Phoenix", "Dragon", "Unicorn", etc.)
-- Strip qualifiers: Independent, With Prompting, Level [N], Training, Phase [N]
-- Keep only the core clinical skill name (1–4 words)
-
-TASK 2 — Behaviors for Decrease:
-Look ONLY for items explicitly listed under a section labeled "Behaviors for Decrease", "BX", or similar heading. Extract those names exactly. If no such section exists, return an empty bx array. Do NOT infer behaviors from data columns.
-
-Return ONLY valid JSON, no markdown:
-\{"programs":["Program Name"],"bx":["Behavior Name"]\}`
+            {type:'text',text:'You are reading an ABA therapy program list screenshot.\n\nTASK 1 - Programs:\nExtract all ABA program names. For each name:\n- Strip zone or location labels (mythical animal names like Phoenix, Dragon, Unicorn, etc.)\n- Strip qualifiers: Independent, With Prompting, Level N, Training, Phase N\n- Keep only the core clinical skill name (1-4 words)\n\nTASK 2 - Behaviors for Decrease:\nLook ONLY for items explicitly listed under a section labeled Behaviors for Decrease, BX, or similar heading. Extract those names exactly. If no such section exists, return an empty bx array. Do NOT infer behaviors from data columns.\n\nReturn ONLY valid JSON, no markdown, no backticks. Format: {"programs":["Name"],"bx":["Name"]}'}
           ]}]
         })
       });
@@ -1128,8 +1116,7 @@ INSTRUCTIONS:
 2. BEHAVIORS: For each item in the BX list, find its event count data in both sessions. Do NOT infer behaviors — only use names from the BX list. Return event counts as numbers.
 3. NOT RUN: Compare the master program list against what appeared in the CURRENT session. Return a "notRun" array of program names from the master list that do not appear to have run in the current session.
 
-Return ONLY raw JSON, no markdown:
-\{"skills":[\{"name":"NET Attending","lastValue":"50","thisValue":"83","unit":"% correct"\}],"behaviors":[\{"name":"Aggression","lastValue":"9","thisValue":"4"\}],"notRun":["Program Name"]\}`;
+Return ONLY raw JSON, no markdown. Example format: {skills:[{name,lastValue,thisValue,unit}], behaviors:[{name,lastValue,thisValue}], notRun:[]}`;
   } else {
     // Generic scan (no profile)
     st.textContent='Scanning images (no profile loaded)...';
@@ -1142,8 +1129,7 @@ RULES:
 3. Name field = short clinical name only (1-4 words, strip set numbers, target numbers, method labels in parentheses, procedural detail after colons).
 4. Strip % signs — numbers only.
 5. notRun = empty array when no profile is loaded.
-Return ONLY raw JSON, no markdown:
-\{"skills":[\{"name":"NET Attending","lastValue":"50","thisValue":"83","unit":"% correct"\}],"behaviors":[\{"name":"Aggression","lastValue":"9","thisValue":"4"\}],"notRun":[]\}`;
+Return ONLY raw JSON, no markdown. Example format: {skills:[{name,lastValue,thisValue,unit}], behaviors:[{name,lastValue,thisValue}], notRun:[]}`;
   }
 
   content.push({type:'text',text:scanPrompt});
