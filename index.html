@@ -695,7 +695,9 @@ function startDrawerEdit(k){
   drawerView='create';drawerEditing=k;
   const profiles=loadProfiles();
   const pr=profiles[k]||{};
-  drawerForm={fila:k,rawName:'',total:pr.total||'',programs:pr.programs?[...pr.programs]:[],bxList:pr.bxList?[...pr.bxList]:[]};
+  // Normalize legacy programs
+  const progs=(pr.programs||[]).map(p=>p.fullName?p:{fullName:p.name||'',shortName:p.name||'',id:p.id||mkId(),_legacy:true});
+  drawerForm={fila:k,rawName:'',total:pr.total||'',programs:progs,bxList:pr.bxList?[...pr.bxList]:[]};
   drawerNewBx='';drawerScanStatus='idle';drawerScanErr='';
   renderDrawer();
 }
@@ -709,7 +711,12 @@ function loadProfile(k){
   const profiles=loadProfiles();
   const pr=profiles[k];
   if(!pr)return;
-  activeClient={fila:k,programs:pr.programs||[],bxList:pr.bxList||[],total:pr.total||''};
+  // Normalize programs to always have fullName and shortName
+  const normalizedProgs=(pr.programs||[]).map(p=>{
+    if(p.fullName)return p; // new format
+    return{fullName:p.name||'',shortName:p.name||'',id:p.id||mkId(),_legacy:true};
+  });
+  activeClient={fila:k,programs:normalizedProgs,bxList:pr.bxList||[],total:pr.total||''};
   // Auto-fill total programs from profile
   if(pr.total){
     const ptEl=document.getElementById('pT');
@@ -736,7 +743,10 @@ function renderDrawerCreate(body){
   const progs=drawerForm.programs;
   const bxList=drawerForm.bxList;
   const hasFila=!!drawerForm.fila;
-  let progChips=progs.map((p,i)=>`<span class="prog-chip"><span>${p.name}</span><button onclick="removeDrawerProg(${i})">x</button></span>`).join('');
+  // Support both new {fullName,shortName} and legacy {name} formats
+  const hasLegacy=progs.some(p=>!p.fullName&&p.name);
+  const legacyWarn=hasLegacy?'<div style="color:#fbbf24;font-size:12px;margin-bottom:8px;">⚠ This profile uses the old format — rescan program screenshots to enable accurate session matching.</div>':'';
+  let progChips=progs.map((p,i)=>{const display=p.shortName||p.name||p.fullName||'';const full=p.fullName||p.name||'';return '<span class="prog-chip" title="'+esc(full)+'"><span>'+esc(display)+'</span><button onclick="removeDrawerProg('+i+')">x</button></span>';}).join('');
   let bxChips=bxList.map((bx,i)=>`<span class="bx-chip"><span>${bx}</span><button onclick="removeDrawerBx(${i})">x</button></span>`).join('');
   let scanMsg='';
   if(drawerScanStatus==='running') scanMsg=`<div style="color:#93c5fd;font-size:13px;margin-top:6px;">Extracting program names...</div>`;
@@ -763,7 +773,7 @@ function renderDrawerCreate(body){
       </div>
       ${scanMsg}
     </div>
-    ${progs.length>0?`<div style="margin-bottom:14px;"><label class="dk-lbl">Programs (${progs.length})</label><div style="display:flex;flex-wrap:wrap;gap:4px;">${progChips}</div></div>`:''}
+    ${progs.length>0?`<div style="margin-bottom:14px;"><label class="dk-lbl">Programs (${progs.length})</label>${legacyWarn}<div style="display:flex;flex-wrap:wrap;gap:4px;">${progChips}</div></div>`:''}
     <hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:14px 0;">
     <div style="margin-bottom:14px;">
       <label class="dk-lbl">Behaviors for Decrease (BX)</label>
@@ -791,7 +801,7 @@ function addDrawerBx(){
 }
 
 // ── PROFILE SCAN (drawer) ─────────────────────────────────
-// Two-phase: extract program names + strip zone/qualifier labels; extract BX from "Behaviors for Decrease" section
+// Stores fullName (exact ABADesk name) + shortName (unique shortened version for notes)
 async function drawerScanFiles(e){
   const files=Array.from(e.target.files);
   if(!files.length)return;
@@ -804,10 +814,10 @@ async function drawerScanFiles(e){
       const resp=await fetch('https://api.anthropic.com/v1/messages',{
         method:'POST',
         headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-        body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,
+        body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:2000,
           messages:[{role:'user',content:[
             {type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}},
-            {type:'text',text:'You are reading an ABA therapy program list screenshot.\n\nTASK 1 - Programs:\nExtract all ABA program names. For each name:\n- Strip zone or location labels (mythical animal names like Phoenix, Dragon, Unicorn, etc.)\n- Strip qualifiers: Independent, With Prompting, Level N, Training, Phase N\n- Keep only the core clinical skill name (1-4 words)\n\nTASK 2 - Behaviors for Decrease:\nLook ONLY for items explicitly listed under a section labeled Behaviors for Decrease, BX, or similar heading. Extract those names exactly. If no such section exists, return an empty bx array. Do NOT infer behaviors from data columns.\n\nReturn ONLY valid JSON, no markdown, no backticks. Format: {"programs":["Name"],"bx":["Name"]}'}
+            {type:'text',text:'You are reading an ABADesk ABA therapy program list screenshot.\n\nTASK 1 - Programs:\nFor each program line, extract TWO versions of the name:\n- fullName: the EXACT name as it appears in ABADesk, stripping only zone/location labels (mythical animal names like Phoenix, Dragon, Unicorn) and qualifiers (Independent, With Prompting, Level N, Training, Phase N) from the beginning or end\n- shortName: a shortened version for clinical notes (2-5 words). CRITICAL: preserve ALL distinguishing detail so no two programs have the same shortName. Example: "Receptive Identification of Objects by Category - Animals" -> fullName: "Receptive Identification of Objects by Category - Animals", shortName: "Rec. ID by Category: Animals"\n\nTASK 2 - Behaviors for Decrease:\nLook ONLY for items explicitly listed under a section labeled Behaviors for Decrease, BX, or similar heading. Extract exact names. If no such section exists, return empty bx array.\n\nReturn ONLY valid JSON, no markdown: {"programs":[{"fullName":"exact name","shortName":"short name"}],"bx":["Name"]}'}
           ]}]
         })
       });
@@ -816,9 +826,15 @@ async function drawerScanFiles(e){
       const txt=d.content&&d.content[0]?d.content[0].text||'':'';
       const parsed=parseJSON(txt)||{programs:[],bx:[]};
       const normStr=s=>s.toLowerCase().replace(/\s+/g,' ').trim();
-      const seenP=new Set(drawerForm.programs.map(x=>normStr(x.name)));
+      const seenP=new Set(drawerForm.programs.map(x=>normStr(x.fullName||x.name||'')));
       const seenBx=new Set(drawerForm.bxList.map(x=>normStr(x)));
-      (parsed.programs||[]).forEach(n=>{const k=normStr(n);if(!seenP.has(k)){seenP.add(k);drawerForm.programs.push({name:n,id:mkId()});}});
+      (parsed.programs||[]).forEach(p=>{
+        // Handle both new {fullName,shortName} and legacy {name} formats
+        const full=p.fullName||p.name||p||'';
+        const short=p.shortName||full;
+        const k=normStr(full);
+        if(full&&!seenP.has(k)){seenP.add(k);drawerForm.programs.push({fullName:full,shortName:short,id:mkId()});}
+      });
       (parsed.bx||[]).forEach(n=>{const k=normStr(n);if(!seenBx.has(k)){seenBx.add(k);drawerForm.bxList.push(n);}});
     }
     drawerScanStatus='done';
@@ -1185,25 +1201,27 @@ async function doScan(){
   if(activeClient&&activeClient.programs&&activeClient.programs.length>0){
     // Profile-guided session scan
     st.textContent='Scanning with profile guidance...';
-    const masterList=activeClient.programs.map(p=>p.name);
+    const masterList=activeClient.programs; // [{fullName, shortName}]
     const bxList=activeClient.bxList||[];
-    scanPrompt=`You are analyzing ABAdesk session screenshots for an ABA therapy note.
+    // Build master list with fullName for matching, shortName for note output
+    const masterListStr=masterList.map((p,i)=>(i+1)+'. FULL: '+p.fullName+' | SHORT: '+p.shortName).join('\n');
+    scanPrompt=`You are analyzing ABADesk session screenshots for an ABA therapy note.
 First ${pc} image(s) = PREVIOUS session. Next ${cc} image(s) = CURRENT session.
 
-MASTER PROGRAM LIST (from client profile):
-${masterList.map((n,i)=>(i+1)+'. '+n).join('\n')}
+MASTER PROGRAM LIST (fullName = exact ABADesk name for matching, shortName = use in output):
+${masterListStr}
 
-BX LIST (behaviors to decrease, from client profile):
+BX LIST (behaviors to decrease):
 ${bxList.length>0?bxList.map((b,i)=>(i+1)+'. '+b).join('\n'):'(none)'}
 
-CRITICAL RULES — READ CAREFULLY:
-1. TREAT EVERY LINE AS A SEPARATE PROGRAM. Do NOT merge or combine programs that have similar names. Each line in the master list is a distinct program even if the names look related (e.g. "Receptive Labels - Animals" and "Receptive Labels - Colors" are TWO separate programs).
-2. SKILLS: For each program in the master list, find its percentage data in BOTH sessions. Match by the full name. Return last session % and this session % as numbers only (no % sign). If a program appears in the current session but not the previous, still include it with lastValue of 0.
-3. NAME SHORTENING: Shorten each matched program name to 2-5 words for the note, but preserve all distinguishing detail. Example: "Receptive Labels - Animals" becomes "Rec. Labels: Animals", NOT just "Rec. Labels". The shortened name must be unique — no two programs should have the same shortened name.
-4. BEHAVIORS: For each item in the BX list, find its event count data in both sessions. Do NOT infer behaviors — only use exact names from the BX list. Return event counts as numbers.
-5. NOT RUN: Return a "notRun" array of the FULL (unshortened) profile names for any master list program that does not appear in the CURRENT session images.
+RULES — FOLLOW EXACTLY:
+1. EVERY program in the master list is a DISTINCT program. Never merge programs with similar names. "Animals" and "Colors" variants are always separate programs.
+2. SKILLS: For each program, search the screenshot for its fullName (or a close match — ABADesk may truncate long names). When found in BOTH sessions, record the percentage from each. Return numbers only, no % sign. If found only in current session (new program), use lastValue of "0".
+3. Use the shortName (not fullName) as the "name" field in your output.
+4. BEHAVIORS: For each BX list item, find its event count in both sessions. Use exact BX list names only.
+5. NOT RUN: Return fullName of any master list program NOT found in the CURRENT session screenshots.
 
-Return ONLY raw JSON, no markdown. Format: {"skills":[{"name":"shortened name","lastValue":"50","thisValue":"83","unit":"% correct"}],"behaviors":[{"name":"Aggression","lastValue":"9","thisValue":"4"}],"notRun":["Full Program Name"]}`;
+Return ONLY raw JSON, no markdown: {"skills":[{"name":"shortName here","lastValue":"50","thisValue":"83","unit":"% correct"}],"behaviors":[{"name":"Aggression","lastValue":"9","thisValue":"4"}],"notRun":["Full Program Name"]}`;
   } else {
     // Generic scan (no profile)
     st.textContent='Scanning images (no profile loaded)...';
