@@ -234,7 +234,8 @@ textarea{resize:vertical;min-height:66px;line-height:1.5;}
   <div class="panel" id="s1">
     <div class="card">
       <div class="ct">Session Details <span class="badge br">Required</span></div>
-      <div class="fr t">
+      <div class="fr" style="margin-bottom:12px;">
+        <div><label>Date <span class="req">*</span></label><input type="date" id="sDate" onchange="onDateChange();autoSave()"></div>
         <div>
           <label>Day <span class="req">*</span></label>
           <select id="dow" onchange="autoSave()">
@@ -243,7 +244,22 @@ textarea{resize:vertical;min-height:66px;line-height:1.5;}
             <option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option>
           </select>
         </div>
-        <div><label>Date <span class="req">*</span></label><input type="date" id="sDate" onchange="onDateChange();autoSave()"></div>
+      </div>
+      <div style="margin-bottom:12px;">
+        <label style="display:block;margin-bottom:6px;">Session Type <span class="req">*</span> <span class="ln">(select one or consecutive AM/Lunch/PM)</span></label>
+        <div class="tg" id="sessTypeG" style="margin-bottom:8px;">
+          <button class="tb" id="st_am" onclick="toggleSessType('am');autoSave()">AM<span style="display:block;font-size:0.65rem;font-weight:400;opacity:0.8;">8:30–11:30</span></button>
+          <button class="tb" id="st_lunch" onclick="toggleSessType('lunch');autoSave()">Lunch<span style="display:block;font-size:0.65rem;font-weight:400;opacity:0.8;">11:30–12:30</span></button>
+          <button class="tb" id="st_pm" onclick="toggleSessType('pm');autoSave()">PM<span style="display:block;font-size:0.65rem;font-weight:400;opacity:0.8;">12:30–3:30</span></button>
+          <button class="tb" id="st_eve" onclick="toggleSessType('eve');autoSave()">Evening<span style="display:block;font-size:0.65rem;font-weight:400;opacity:0.8;">4:00–6:00</span></button>
+        </div>
+      </div>
+      <div class="fr t">
+        <div><label>Start Time <span class="req">*</span></label><input type="time" id="sT" step="900" oninput="calcH();autoSave()"></div>
+        <div><label>End Time <span class="req">*</span></label><input type="time" id="eT" step="900" oninput="calcH();autoSave()"></div>
+        <div><label>Total Hours (auto)</label><input type="text" id="tH" readonly></div>
+      </div>
+      <div class="fr t">
         <div>
           <label>Location <span class="req">*</span></label>
           <select id="loc" onchange="autoSave()">
@@ -252,21 +268,8 @@ textarea{resize:vertical;min-height:66px;line-height:1.5;}
             <option value="the community">Community</option>
           </select>
         </div>
-      </div>
-      <div class="fr t">
-        <div><label>Start Time <span class="req">*</span></label><input type="time" id="sT" oninput="calcH();autoSave()"></div>
-        <div><label>End Time <span class="req">*</span></label><input type="time" id="eT" oninput="calcH();autoSave()"></div>
-        <div><label>Total Hours (auto)</label><input type="text" id="tH" readonly></div>
-      </div>
-      <div class="fr">
-        <div><label>Programs Completed <span class="req">*</span></label><input type="number" id="pC" min="0" max="99" placeholder="7" oninput="calcInc();autoSave()"></div>
-        <div><label>Total Programs <span class="req">*</span></label><input type="number" id="pT" min="0" max="99" placeholder="8" oninput="calcInc();autoSave()"></div>
-      </div>
-      <div id="incW" class="hidden">
-        <label style="display:block;margin-bottom:5px;">Programs not completed — add one entry per reason <span class="req">*</span></label>
-        <div class="info">Each entry generates: <em>"X/Y programs were not worked on due to [reason]."</em></div>
-        <div id="incL"></div>
-        <button class="ab" onclick="addInc()">+ Add reason</button>
+        <div><label>Programs Completed <span class="req">*</span></label><input type="number" id="pC" min="0" max="99" placeholder="7" oninput="autoSave()"></div>
+        <div><label>Total Programs <span class="req">*</span></label><input type="number" id="pT" min="0" max="99" placeholder="8" oninput="autoSave()"></div>
       </div>
     </div>
     <div class="nr"><button class="btn bs" onclick="goStep(0)">← Back</button><button class="btn bp" onclick="goStep(2)">Next: Transition →</button></div>
@@ -392,24 +395,9 @@ textarea{resize:vertical;min-height:66px;line-height:1.5;}
     <div id="scanBanner" class="hidden sbox" style="margin-bottom:14px;"></div>
     <!-- Not-run programs box (populated by scan) -->
     <div id="notRunBox" class="hidden notrun-box" style="margin-bottom:14px;">
-      <div class="notrun-title">⚠ Programs that may not have run this session</div>
-      <div class="info" style="margin-bottom:9px;">Check all that apply. Your selections will appear in the incomplete programs section of Note 1.</div>
+      <div class="notrun-title">⚠ Programs that did not run this session</div>
+      <div class="info" style="margin-bottom:9px;">Uncheck any that actually did run. For each remaining program, select the reason it was not completed. These will be grouped by reason in Note 1.</div>
       <div id="notRunList"></div>
-      <div style="margin-top:10px;">
-        <label style="margin-bottom:4px;display:block;">Group reason for unchecked programs</label>
-        <select id="notRunReason" onchange="autoSave()" style="margin-bottom:0;">
-          <option value="lack of opportunity">Lack of opportunity</option>
-          <option value="time constraints">Time constraints</option>
-          <option value="the antecedent event did not occur naturally during the session">Antecedent not natural</option>
-          <option value="being a social group program not applicable to today's session format">Social group</option>
-          <option value="being a rotating chores program not scheduled for this session">Rotating chores</option>
-          <option value="client interfering behaviors preventing program access">Interfering behaviors</option>
-          <option value="weak motivating operations">Weak motivation</option>
-          <option value="requiring a specific setting not available today">Setting unavailable</option>
-          <option value="client requiring extended reinforcement periods">Extended reinforcement</option>
-          <option value="prerequisite skill work being needed first">Prerequisite needed</option>
-        </select>
-      </div>
     </div>
     <div class="card">
       <div class="ct">Degree of Progress — Skill Data <span class="badge br">1 per hour of session</span></div>
@@ -523,10 +511,13 @@ const STARTERS=[
 // ── INIT ──────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded',()=>{
   loadPhrases();
-  // Auto-fill today's date and day
-  const today=new Date();
-  document.getElementById('sDate').valueAsDate=today;
-  document.getElementById('dow').value=today.toLocaleDateString('en-US',{weekday:'long'});
+  // Auto-fill today's date and day — timezone-safe
+  const now=new Date();
+  const tzOffset=now.getTimezoneOffset()*60000;
+  const localDate=new Date(now.getTime()-tzOffset);
+  const dateStr=localDate.toISOString().slice(0,10);
+  document.getElementById('sDate').value=dateStr;
+  onDateChange(); // sets dow from date
   loadApiKeyUI();
   const saved=tryLoadSession();
   if(!saved){addSkillRow();addBehRow();addExample();addExample();}
@@ -538,15 +529,72 @@ window.addEventListener('DOMContentLoaded',()=>{
 function onDateChange(){
   const val=document.getElementById('sDate').value;
   if(!val)return;
+  // Use T12:00:00 to avoid timezone-midnight rollover
   const d=new Date(val+'T12:00:00');
-  const dayName=d.toLocaleDateString('en-US',{weekday:'long'});
-  document.getElementById('dow').value=dayName;
+  const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  document.getElementById('dow').value=days[d.getDay()];
 }
 
 // ── ARTICLE HELPER ────────────────────────────────────────
 function article(word){
   if(!word)return'a';
   return /^[aeiou]/i.test(word.trim())?'an':'a';
+}
+
+// ── SESSION TYPE PICKER ───────────────────────────────────
+const SESS_TIMES={
+  am:  {start:'08:30',end:'11:30'},
+  lunch:{start:'11:30',end:'12:30'},
+  pm:  {start:'12:30',end:'15:30'},
+  eve: {start:'16:00',end:'18:00'}
+};
+// Which combos are allowed (eve must be alone)
+const SESS_ORDER=['am','lunch','pm'];
+let selectedSessions=[];
+
+function toggleSessType(type){
+  // Evening is always solo
+  if(type==='eve'){
+    selectedSessions=['eve'];
+  } else {
+    // Remove evening if present
+    selectedSessions=selectedSessions.filter(s=>s!=='eve');
+    const idx=selectedSessions.indexOf(type);
+    if(idx>=0){
+      selectedSessions.splice(idx,1);
+    } else {
+      selectedSessions.push(type);
+      // Keep only contiguous valid combos from SESS_ORDER
+      // Valid: any single, am+lunch, lunch+pm, am+lunch+pm
+      const ordered=SESS_ORDER.filter(s=>selectedSessions.includes(s));
+      // Check contiguous
+      if(ordered.length>1){
+        const allIdx=ordered.map(s=>SESS_ORDER.indexOf(s));
+        const isContiguous=allIdx.every((v,i)=>i===0||v===allIdx[i-1]+1);
+        if(!isContiguous){
+          // Keep only the newly clicked one
+          selectedSessions=[type];
+        } else {
+          selectedSessions=ordered;
+        }
+      } else {
+        selectedSessions=ordered;
+      }
+    }
+  }
+  // Update button states
+  ['am','lunch','pm','eve'].forEach(s=>{
+    const btn=document.getElementById('st_'+s);
+    if(btn)btn.classList.toggle('sel',selectedSessions.includes(s));
+  });
+  // Fill times
+  if(selectedSessions.length>0){
+    const first=SESS_TIMES[selectedSessions[0]];
+    const last=SESS_TIMES[selectedSessions[selectedSessions.length-1]];
+    document.getElementById('sT').value=first.start;
+    document.getElementById('eT').value=last.end;
+    calcH();
+  }
 }
 
 // ── API KEY ───────────────────────────────────────────────
@@ -810,6 +858,7 @@ function captureState(){
   const examples=Array.from(document.querySelectorAll('#exampleL .ex-ta')).map(e=>e.value);
   // Capture not-run checkboxes
   const notRunChecked=Array.from(document.querySelectorAll('#notRunList input[type=checkbox]:checked')).map(cb=>cb.dataset.name||'');
+  const notRunReasons={};document.querySelectorAll('#notRunList [data-reason-for]').forEach(sel=>{notRunReasons[sel.dataset.reasonFor]=sel.value;});
   return{
     step,
     dow:v('dow'),sDate:v('sDate'),loc:v('loc'),sT:v('sT'),eT:v('eT'),
@@ -825,8 +874,8 @@ function captureState(){
     prodSel:document.querySelector('#prodG .tb.sel')?.textContent||'',
     respSel:document.querySelector('#respG .tb.sel')?.textContent||'',
     examples,
-    notRunNames,notRunChecked,
-    notRunReason:v('notRunReason'),
+    notRunNames,notRunChecked,notRunReasons,
+    selectedSessions:[...selectedSessions],
     savedAt:Date.now()
   };
 }
@@ -877,8 +926,12 @@ function restoreSession(){
     // Restore not-run state
     if(s.notRunNames&&s.notRunNames.length){
       notRunNames=s.notRunNames;
-      renderNotRun(s.notRunChecked||[]);
-      set('notRunReason',s.notRunReason);
+      renderNotRun(s.notRunChecked||[],s.notRunReasons||{});
+    }
+    // Restore session type
+    if(s.selectedSessions&&s.selectedSessions.length){
+      selectedSessions=[];
+      s.selectedSessions.forEach(t=>toggleSessType(t));
     }
     if(s.step>0)goStep(s.step);
   }catch(e){console.error('Restore failed',e);}
@@ -904,7 +957,8 @@ function confirmClear(){
     ['safeD','barD','barOW','mitOW','incW'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add('hidden');});
     const btns=document.querySelectorAll('#behTrackG .tb');if(btns[0])btns[0].classList.add('sel');showEl('behContent',true);
     updContCount();
-    prevImgs=[];currImgs=[];notRunNames=[];
+    prevImgs=[];currImgs=[];notRunNames=[];selectedSessions=[];
+    ['am','lunch','pm','eve'].forEach(s=>{const b=document.getElementById('st_'+s);if(b)b.classList.remove('sel');});
     document.getElementById('prevTh').innerHTML='';
     document.getElementById('currTh').innerHTML='';
     document.getElementById('scanSt').textContent='';
@@ -986,21 +1040,52 @@ function addInc(){
 function togIncOth(sel){const w=sel.closest('.dr').querySelector('.inc-oth');if(w)w.style.display=sel.value==='__other__'?'block':'none';}
 
 // ── NOT-RUN PROGRAMS UI ───────────────────────────────────
-function renderNotRun(preChecked){
+const NOT_RUN_REASONS=[
+  {val:'lack of opportunity',lbl:'Lack of opportunity'},
+  {val:'time constraints',lbl:'Time constraints'},
+  {val:'the antecedent event did not occur naturally during the session',lbl:'Antecedent not natural'},
+  {val:"being a social group program not applicable to today's session format",lbl:"Social group"},
+  {val:'being a rotating chores program not scheduled for this session',lbl:'Rotating chores'},
+  {val:'client interfering behaviors preventing program access',lbl:'Interfering behaviors'},
+  {val:'weak motivating operations',lbl:'Weak motivation'},
+  {val:'requiring a specific setting not available today',lbl:'Setting unavailable'},
+  {val:'client requiring extended reinforcement periods',lbl:'Extended reinforcement'},
+  {val:'prerequisite skill work being needed first',lbl:'Prerequisite needed'},
+];
+function reasonOptions(selected){
+  return NOT_RUN_REASONS.map(r=>'<option value="'+r.val+'"'+(selected===r.val?' selected':'')+'>'+r.lbl+'</option>').join('');
+}
+function renderNotRun(preChecked, preReasons){
   const box=document.getElementById('notRunBox');
   const list=document.getElementById('notRunList');
   if(!notRunNames||!notRunNames.length){box.classList.add('hidden');list.innerHTML='';return;}
   box.classList.remove('hidden');
   list.innerHTML='';
-  notRunNames.forEach(name=>{
+  notRunNames.forEach((name,i)=>{
     const item=document.createElement('div');item.className='notrun-item';
-    const checked=preChecked?preChecked.includes(name):true; // default checked
-    item.innerHTML=`<input type="checkbox" data-name="${esc(name)}" ${checked?'checked':''} onchange="autoSave()"><span>${esc(name)}</span>`;
+    item.style.cssText='display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f0ddb0;flex-wrap:wrap;';
+    const checked=preChecked?preChecked.includes(name):true;
+    const savedReason=preReasons&&preReasons[name]?preReasons[name]:'lack of opportunity';
+    item.innerHTML='<input type="checkbox" data-name="'+esc(name)+'" '+(checked?'checked':'')+'onchange="togNotRun(this);autoSave()">'
+      +'<span style="flex:1;min-width:120px;font-size:0.8rem;">'+esc(name)+'</span>'
+      +'<select data-reason-for="'+esc(name)+'" onchange="autoSave()" style="flex:2;min-width:160px;padding:4px 7px;border:1.5px solid var(--bd);border-radius:5px;font-size:0.75rem;font-family:Nunito,sans-serif;'+(checked?'':'opacity:0.4;pointer-events:none;')+'">'
+      +reasonOptions(savedReason)+'</select>';
     list.appendChild(item);
   });
 }
+function togNotRun(cb){
+  const name=cb.dataset.name;
+  const sel=document.querySelector('[data-reason-for="'+name+'"]');
+  if(sel){sel.style.opacity=cb.checked?'1':'0.4';sel.style.pointerEvents=cb.checked?'auto':'none';}
+  autoSave();
+}
 function getCheckedNotRun(){
-  return Array.from(document.querySelectorAll('#notRunList input[type=checkbox]:checked')).map(cb=>cb.dataset.name).filter(Boolean);
+  // Returns array of {name, reason}
+  return Array.from(document.querySelectorAll('#notRunList input[type=checkbox]:checked')).map(cb=>{
+    const name=cb.dataset.name;
+    const sel=document.querySelector('[data-reason-for="'+name+'"]');
+    return{name,reason:sel?sel.value:'lack of opportunity'};
+  }).filter(x=>x.name);
 }
 
 // ── IMAGE UPLOAD ──────────────────────────────────────────
@@ -1111,12 +1196,14 @@ ${masterList.map((n,i)=>(i+1)+'. '+n).join('\n')}
 BX LIST (behaviors to decrease, from client profile):
 ${bxList.length>0?bxList.map((b,i)=>(i+1)+'. '+b).join('\n'):'(none)'}
 
-INSTRUCTIONS:
-1. SKILLS: For each program in the master list, find its percentage data in BOTH sessions. Only include programs that appear in both sessions with percentage data. Return last session % and this session % as numbers only (no % sign).
-2. BEHAVIORS: For each item in the BX list, find its event count data in both sessions. Do NOT infer behaviors — only use names from the BX list. Return event counts as numbers.
-3. NOT RUN: Compare the master program list against what appeared in the CURRENT session. Return a "notRun" array of program names from the master list that do not appear to have run in the current session.
+CRITICAL RULES — READ CAREFULLY:
+1. TREAT EVERY LINE AS A SEPARATE PROGRAM. Do NOT merge or combine programs that have similar names. Each line in the master list is a distinct program even if the names look related (e.g. "Receptive Labels - Animals" and "Receptive Labels - Colors" are TWO separate programs).
+2. SKILLS: For each program in the master list, find its percentage data in BOTH sessions. Match by the full name. Return last session % and this session % as numbers only (no % sign). If a program appears in the current session but not the previous, still include it with lastValue of 0.
+3. NAME SHORTENING: Shorten each matched program name to 2-5 words for the note, but preserve all distinguishing detail. Example: "Receptive Labels - Animals" becomes "Rec. Labels: Animals", NOT just "Rec. Labels". The shortened name must be unique — no two programs should have the same shortened name.
+4. BEHAVIORS: For each item in the BX list, find its event count data in both sessions. Do NOT infer behaviors — only use exact names from the BX list. Return event counts as numbers.
+5. NOT RUN: Return a "notRun" array of the FULL (unshortened) profile names for any master list program that does not appear in the CURRENT session images.
 
-Return ONLY raw JSON, no markdown. Example format: {skills:[{name,lastValue,thisValue,unit}], behaviors:[{name,lastValue,thisValue}], notRun:[]}`;
+Return ONLY raw JSON, no markdown. Format: {"skills":[{"name":"shortened name","lastValue":"50","thisValue":"83","unit":"% correct"}],"behaviors":[{"name":"Aggression","lastValue":"9","thisValue":"4"}],"notRun":["Full Program Name"]}`;
   } else {
     // Generic scan (no profile)
     st.textContent='Scanning images (no profile loaded)...';
@@ -1174,7 +1261,17 @@ Return ONLY raw JSON, no markdown. Example format: {skills:[{name,lastValue,this
 
     // Not-run programs
     notRunNames=notRun;
-    renderNotRun([]);
+    renderNotRun([],{});
+    // Auto-fill pC and pT
+    const totalFromProfile=activeClient&&activeClient.total?parseInt(activeClient.total):0;
+    const totalProgs=totalFromProfile||pool.length+notRun.length;
+    const completedProgs=pool.length;
+    if(totalProgs>0){
+      const ptEl=document.getElementById('pT');
+      const pcEl=document.getElementById('pC');
+      if(ptEl)ptEl.value=totalProgs;
+      if(pcEl)pcEl.value=completedProgs;
+    }
 
     // Show scan banner on data tab
     document.getElementById('scanBanner').classList.remove('hidden');
@@ -1338,23 +1435,18 @@ function genNotes(){
   }
   n1+=`The client was an active participant and the technician was able to complete ${pC}/${pT} programs.`;
 
-  // Incomplete programs from manual incL rows
-  const incRows=Array.from(document.querySelectorAll('#incL .dr'));
-  if(incRows.length){
-    const sentences=incRows.map(r=>{
-      const count=r.querySelector('.inc').value||'?';
-      const rsn=r.querySelector('.inr').value;
-      const finalRsn=rsn==='__other__'?(r.querySelector('.ino')?.value||'other reasons'):rsn;
-      return ` ${count}/${pT} programs were not worked on due to ${finalRsn}.`;
-    });
-    n1+=sentences.join('');
-  }
-
-  // Not-run programs from scan (checked items)
+  // Not-run programs from scan — group by reason
   const checkedNotRun=getCheckedNotRun();
   if(checkedNotRun.length>0){
-    const reason=v('notRunReason')||'lack of opportunity';
-    n1+=` ${checkedNotRun.length}/${pT} programs were not worked on due to ${reason}.`;
+    // Group by reason
+    const byReason={};
+    checkedNotRun.forEach(({name,reason})=>{
+      if(!byReason[reason])byReason[reason]=[];
+      byReason[reason].push(name);
+    });
+    Object.entries(byReason).forEach(([reason,names])=>{
+      n1+=` ${names.length}/${pT} programs were not worked on due to ${reason}.`;
+    });
   }
 
   // ── NOTE 2: Client Transition & Safety ──────────────────
