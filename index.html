@@ -396,8 +396,24 @@ textarea{resize:vertical;min-height:66px;line-height:1.5;}
     <!-- Not-run programs box (populated by scan) -->
     <div id="notRunBox" class="hidden notrun-box" style="margin-bottom:14px;">
       <div class="notrun-title">⚠ Programs that did not run this session</div>
-      <div class="info" style="margin-bottom:9px;">Uncheck any that actually did run. For each remaining program, select the reason it was not completed. These will be grouped by reason in Note 1.</div>
+      <div class="info" style="margin-bottom:9px;">Check programs to group them by reason. Select a reason and click <strong>Group Selected</strong>. Grouped programs disappear — repeat until all are grouped.</div>
       <div id="notRunList"></div>
+      <div id="notRunGrouped" style="margin-top:8px;"></div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap;">
+        <select id="notRunReason" style="flex:1;min-width:180px;padding:7px 10px;border:1.5px solid var(--bd);border-radius:6px;font-size:0.8rem;font-family:Nunito,sans-serif;">
+          <option value="lack of opportunity">Lack of opportunity</option>
+          <option value="time constraints">Time constraints</option>
+          <option value="the antecedent event did not occur naturally during the session">Antecedent not natural</option>
+          <option value="being a social group program not applicable to today's session format">Social group</option>
+          <option value="being a rotating chores program not scheduled for this session">Rotating chores</option>
+          <option value="client interfering behaviors preventing program access">Interfering behaviors</option>
+          <option value="weak motivating operations">Weak motivation</option>
+          <option value="requiring a specific setting not available today">Setting unavailable</option>
+          <option value="client requiring extended reinforcement periods">Extended reinforcement</option>
+          <option value="prerequisite skill work being needed first">Prerequisite needed</option>
+        </select>
+        <button onclick="groupSelectedNotRun()" style="padding:7px 14px;background:var(--amber);color:#fff;border:none;border-radius:6px;font-family:Nunito,sans-serif;font-size:0.8rem;font-weight:700;cursor:pointer;white-space:nowrap;">Group Selected</button>
+      </div>
     </div>
     <div class="card">
       <div class="ct">Degree of Progress — Skill Data <span class="badge br">1 per hour of session</span></div>
@@ -872,9 +888,7 @@ function captureState(){
   });
   const incRows=Array.from(document.querySelectorAll('#incL .dr')).map(r=>({count:r.querySelector('.inc').value,rsn:r.querySelector('.inr').value,oth:r.querySelector('.ino')?.value||''}));
   const examples=Array.from(document.querySelectorAll('#exampleL .ex-ta')).map(e=>e.value);
-  // Capture not-run checkboxes
-  const notRunChecked=Array.from(document.querySelectorAll('#notRunList input[type=checkbox]:checked')).map(cb=>cb.dataset.name||'');
-  const notRunReasons={};document.querySelectorAll('#notRunList [data-reason-for]').forEach(sel=>{notRunReasons[sel.dataset.reasonFor]=sel.value;});
+  // Capture not-run grouping state
   return{
     step,
     dow:v('dow'),sDate:v('sDate'),loc:v('loc'),sT:v('sT'),eT:v('eT'),
@@ -890,7 +904,7 @@ function captureState(){
     prodSel:document.querySelector('#prodG .tb.sel')?.textContent||'',
     respSel:document.querySelector('#respG .tb.sel')?.textContent||'',
     examples,
-    notRunNames,notRunChecked,notRunReasons,
+    notRunNames,notRunGroups:[...notRunGroups],notRunPending:[...notRunPending],
     selectedSessions:[...selectedSessions],
     savedAt:Date.now()
   };
@@ -942,7 +956,7 @@ function restoreSession(){
     // Restore not-run state
     if(s.notRunNames&&s.notRunNames.length){
       notRunNames=s.notRunNames;
-      renderNotRun(s.notRunChecked||[],s.notRunReasons||{});
+      renderNotRun(s.notRunGroups||[],s.notRunPending||null);
     }
     // Restore session type
     if(s.selectedSessions&&s.selectedSessions.length){
@@ -973,7 +987,7 @@ function confirmClear(){
     ['safeD','barD','barOW','mitOW','incW'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add('hidden');});
     const btns=document.querySelectorAll('#behTrackG .tb');if(btns[0])btns[0].classList.add('sel');showEl('behContent',true);
     updContCount();
-    prevImgs=[];currImgs=[];notRunNames=[];selectedSessions=[];
+    prevImgs=[];currImgs=[];notRunNames=[];notRunGroups=[];notRunPending=[];selectedSessions=[];
     ['am','lunch','pm','eve'].forEach(s=>{const b=document.getElementById('st_'+s);if(b)b.classList.remove('sel');});
     document.getElementById('prevTh').innerHTML='';
     document.getElementById('currTh').innerHTML='';
@@ -1056,52 +1070,81 @@ function addInc(){
 function togIncOth(sel){const w=sel.closest('.dr').querySelector('.inc-oth');if(w)w.style.display=sel.value==='__other__'?'block':'none';}
 
 // ── NOT-RUN PROGRAMS UI ───────────────────────────────────
-const NOT_RUN_REASONS=[
-  {val:'lack of opportunity',lbl:'Lack of opportunity'},
-  {val:'time constraints',lbl:'Time constraints'},
-  {val:'the antecedent event did not occur naturally during the session',lbl:'Antecedent not natural'},
-  {val:"being a social group program not applicable to today's session format",lbl:"Social group"},
-  {val:'being a rotating chores program not scheduled for this session',lbl:'Rotating chores'},
-  {val:'client interfering behaviors preventing program access',lbl:'Interfering behaviors'},
-  {val:'weak motivating operations',lbl:'Weak motivation'},
-  {val:'requiring a specific setting not available today',lbl:'Setting unavailable'},
-  {val:'client requiring extended reinforcement periods',lbl:'Extended reinforcement'},
-  {val:'prerequisite skill work being needed first',lbl:'Prerequisite needed'},
-];
-function reasonOptions(selected){
-  return NOT_RUN_REASONS.map(r=>'<option value="'+r.val+'"'+(selected===r.val?' selected':'')+'>'+r.lbl+'</option>').join('');
-}
-function renderNotRun(preChecked, preReasons){
+// ── NOT-RUN PROGRAMS UI ──────────────────────────────────
+// notRunGroups: [{reason, names:[]}] — finalized groups
+// notRunPending: [name] — ungrouped programs still showing
+let notRunGroups=[];
+let notRunPending=[];
+
+function renderNotRun(savedGroups, savedPending){
   const box=document.getElementById('notRunBox');
-  const list=document.getElementById('notRunList');
-  if(!notRunNames||!notRunNames.length){box.classList.add('hidden');list.innerHTML='';return;}
+  if(!notRunNames||!notRunNames.length){box.classList.add('hidden');return;}
   box.classList.remove('hidden');
+  // Restore state or initialize fresh
+  notRunGroups=savedGroups||[];
+  // Pending = all notRunNames not yet in any group
+  const grouped=new Set(notRunGroups.flatMap(g=>g.names));
+  notRunPending=savedPending||(notRunNames.filter(n=>!grouped.has(n)));
+  renderNotRunLists();
+}
+
+function renderNotRunLists(){
+  const list=document.getElementById('notRunList');
+  const grouped=document.getElementById('notRunGrouped');
+  // Pending checkboxes
   list.innerHTML='';
-  notRunNames.forEach((name,i)=>{
+  notRunPending.forEach(name=>{
     const item=document.createElement('div');item.className='notrun-item';
-    item.style.cssText='display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f0ddb0;flex-wrap:wrap;';
-    const checked=preChecked?preChecked.includes(name):true;
-    const savedReason=preReasons&&preReasons[name]?preReasons[name]:'lack of opportunity';
-    item.innerHTML='<input type="checkbox" data-name="'+esc(name)+'" '+(checked?'checked':'')+'onchange="togNotRun(this);autoSave()">'
-      +'<span style="flex:1;min-width:120px;font-size:0.8rem;">'+esc(name)+'</span>'
-      +'<select data-reason-for="'+esc(name)+'" onchange="autoSave()" style="flex:2;min-width:160px;padding:4px 7px;border:1.5px solid var(--bd);border-radius:5px;font-size:0.75rem;font-family:Nunito,sans-serif;'+(checked?'':'opacity:0.4;pointer-events:none;')+'">'
-      +reasonOptions(savedReason)+'</select>';
+    item.innerHTML='<input type="checkbox" data-name="'+esc(name)+'" onchange="autoSave()">'
+      +'<span style="font-size:0.8rem;">'+esc(name)+'</span>';
     list.appendChild(item);
   });
+  // Grouped summary (collapsible pills showing what is already grouped)
+  grouped.innerHTML='';
+  if(notRunGroups.length>0){
+    notRunGroups.forEach((g,gi)=>{
+      const pill=document.createElement('div');
+      pill.style.cssText='background:#fff7ed;border:1px solid #e8c080;border-radius:6px;padding:6px 9px;margin-bottom:5px;font-size:0.75rem;display:flex;align-items:flex-start;justify-content:space-between;gap:8px;';
+      const reasonLbl=g.reason.length>40?g.reason.slice(0,40)+'...':g.reason;
+      pill.innerHTML='<div><span style="font-weight:700;color:var(--amber);">'+esc(reasonLbl)+':</span> <span style="color:var(--ink);">'+g.names.map(n=>esc(n)).join(', ')+'</span></div>'
+        +'<button onclick="ungroup('+gi+')" style="background:none;border:none;color:var(--il);cursor:pointer;font-size:0.8rem;flex-shrink:0;" title="Undo group">✕</button>';
+      grouped.appendChild(pill);
+    });
+  }
+  // Hide the whole box if everything is grouped and nothing pending
+  const box=document.getElementById('notRunBox');
+  if(notRunNames.length>0&&notRunPending.length===0&&notRunGroups.length>0){
+    // Show a done state
+    list.innerHTML='<div style="font-size:0.78rem;color:var(--green);font-weight:700;padding:4px 0;">✓ All programs grouped</div>';
+  }
 }
-function togNotRun(cb){
-  const name=cb.dataset.name;
-  const sel=document.querySelector('[data-reason-for="'+name+'"]');
-  if(sel){sel.style.opacity=cb.checked?'1':'0.4';sel.style.pointerEvents=cb.checked?'auto':'none';}
+
+function groupSelectedNotRun(){
+  const checked=Array.from(document.querySelectorAll('#notRunList input[type=checkbox]:checked')).map(cb=>cb.dataset.name).filter(Boolean);
+  if(!checked.length){alert('Check at least one program first.');return;}
+  const reason=document.getElementById('notRunReason').value;
+  // Check if this reason already has a group — if so, merge
+  const existing=notRunGroups.find(g=>g.reason===reason);
+  if(existing){existing.names.push(...checked);}
+  else{notRunGroups.push({reason,names:checked});}
+  // Remove from pending
+  notRunPending=notRunPending.filter(n=>!checked.includes(n));
+  renderNotRunLists();
   autoSave();
 }
+
+function ungroup(gi){
+  const g=notRunGroups[gi];
+  // Put names back in pending
+  notRunPending.push(...g.names);
+  notRunGroups.splice(gi,1);
+  renderNotRunLists();
+  autoSave();
+}
+
 function getCheckedNotRun(){
-  // Returns array of {name, reason}
-  return Array.from(document.querySelectorAll('#notRunList input[type=checkbox]:checked')).map(cb=>{
-    const name=cb.dataset.name;
-    const sel=document.querySelector('[data-reason-for="'+name+'"]');
-    return{name,reason:sel?sel.value:'lack of opportunity'};
-  }).filter(x=>x.name);
+  // Returns all finalized groups as [{reason, names}]
+  return notRunGroups;
 }
 
 // ── IMAGE UPLOAD ──────────────────────────────────────────
@@ -1279,7 +1322,7 @@ Return ONLY raw JSON, no markdown. Example format: {skills:[{name,lastValue,this
 
     // Not-run programs
     notRunNames=notRun;
-    renderNotRun([],{});
+    renderNotRun([],null);
     // Auto-fill pC and pT
     const totalFromProfile=activeClient&&activeClient.total?parseInt(activeClient.total):0;
     const totalProgs=totalFromProfile||pool.length+notRun.length;
@@ -1453,19 +1496,13 @@ function genNotes(){
   }
   n1+=`The client was an active participant and the technician was able to complete ${pC}/${pT} programs.`;
 
-  // Not-run programs from scan — group by reason
-  const checkedNotRun=getCheckedNotRun();
-  if(checkedNotRun.length>0){
-    // Group by reason
-    const byReason={};
-    checkedNotRun.forEach(({name,reason})=>{
-      if(!byReason[reason])byReason[reason]=[];
-      byReason[reason].push(name);
-    });
-    Object.entries(byReason).forEach(([reason,names])=>{
-      n1+=` ${names.length}/${pT} programs were not worked on due to ${reason}.`;
-    });
-  }
+  // Not-run programs — one sentence per group
+  const notRunGroupsSnap=getCheckedNotRun(); // returns notRunGroups array
+  notRunGroupsSnap.forEach(g=>{
+    if(g.names&&g.names.length>0){
+      n1+=` ${g.names.length}/${pT} programs were not worked on due to ${g.reason}.`;
+    }
+  });
 
   // ── NOTE 2: Client Transition & Safety ──────────────────
   const transType=document.querySelector('#transG .tb.sel')?.textContent||'independently';
